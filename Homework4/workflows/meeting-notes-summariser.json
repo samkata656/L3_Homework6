@@ -1,0 +1,369 @@
+{
+  "name": "L3/H4",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -528,
+        0
+      ],
+      "id": "cd0a5c31-ed52-43a4-beb0-f85954c894c6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "\n{\n  \"meeting_id\": \"MKT-2026-10-12\",\n  \"company\": \"Office 1 Bulgaria\",\n  \"department\": \"Marketing\",\n  \"title\": \"Q4 Campaign Planning\",\n  \"date\": \"2026-10-12\",\n  \"start_time\": \"10:00\",\n  \"end_time\": \"11:00\",\n  \"attendees\": [\n    {\"name\": \"Elena Petrova\", \"role\": \"Marketing Manager\"},\n    {\"name\": \"Nikolay Dimitrov\", \"role\": \"Digital Marketing Specialist\"},\n    {\"name\": \"Maria Georgieva\", \"role\": \"Content Creator\"},\n    {\"name\": \"Viktor Stoyanov\", \"role\": \"E-commerce Specialist\"}\n  ],\n  \"discussion_points\": [\n    \"September digital campaigns generated 18% more website traffic compared to August.\",\n    \"Website conversion rates decreased from 3.2% to 2.7%.\",\n    \"The team discussed launching a Back to Office campaign targeting SMEs.\",\n    \"Elena proposed increasing the Google Ads budget by 15%.\",\n    \"Maria suggested creating three promotional videos.\",\n    \"Viktor identified slow mobile landing page performance.\",\n    \"The team discussed email segmentation based on customer purchase history.\",\n    \"Black Friday preparations must begin before October 20.\"\n  ],\n  \"metrics\": {\n    \"website_traffic_growth_percent\": 18,\n    \"previous_conversion_rate_percent\": 3.2,\n    \"current_conversion_rate_percent\": 2.7,\n    \"proposed_ads_budget_increase_percent\": 15\n  },\n  \"decisions\": [\n    \"Approve the 15% advertising budget increase.\",\n    \"Prioritize mobile landing page optimization.\",\n    \"Launch segmented email marketing campaigns.\"\n  ],\n  \"action_items\": [\n    {\n      \"task_id\": \"MKT-001\",\n      \"description\": \"Prepare updated Google Ads strategy\",\n      \"owner\": \"Nikolay Dimitrov\",\n      \"deadline\": \"2026-10-16\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"MKT-002\",\n      \"description\": \"Create three promotional video concepts\",\n      \"owner\": \"Maria Georgieva\",\n      \"deadline\": \"2026-10-19\",\n      \"status\": \"pending\",\n      \"priority\": \"medium\"\n    },\n    {\n      \"task_id\": \"MKT-003\",\n      \"description\": \"Coordinate mobile landing page optimization\",\n      \"owner\": \"Viktor Stoyanov\",\n      \"deadline\": \"2026-10-21\",\n      \"status\": \"pending\",\n      \"priority\": \"high\",\n      \"dependent_department\": \"IT\"\n    },\n    {\n      \"task_id\": \"MKT-004\",\n      \"description\": \"Present Black Friday campaign proposal\",\n      \"owner\": \"Elena Petrova\",\n      \"deadline\": \"2026-10-23\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    }\n  ],\n  \"risks\": [\n    \"Declining website conversion rates.\",\n    \"Slow mobile landing pages.\",\n    \"Limited preparation time before Black Friday.\"\n  ],\n  \"department_dependencies\": [\"IT\", \"Sales\", \"Logistics\"]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -192,
+        -272
+      ],
+      "id": "90360c56-43d2-4586-ab2c-fdf5ebdf34e2",
+      "name": "Marketing meeting notes"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "\n{\n  \"meeting_id\": \"SAL-2026-10-13\",\n  \"company\": \"Office 1 Bulgaria\",\n  \"department\": \"Sales\",\n  \"title\": \"Monthly Performance Review\",\n  \"date\": \"2026-10-13\",\n  \"start_time\": \"09:30\",\n  \"end_time\": \"10:30\",\n  \"attendees\": [\n    {\"name\": \"Georgi Ivanov\", \"role\": \"Sales Director\"},\n    {\"name\": \"Desislava Koleva\", \"role\": \"Key Account Manager\"},\n    {\"name\": \"Petar Hristov\", \"role\": \"B2B Sales Representative\"},\n    {\"name\": \"Ralitsa Nikolova\", \"role\": \"Sales Operations Specialist\"}\n  ],\n  \"discussion_points\": [\n    \"September revenue reached EUR 1.24 million.\",\n    \"Revenue increased 7% compared to August but remained 4% below target.\",\n    \"Office furniture sales performed strongly.\",\n    \"Three corporate clients requested revised annual supply pricing.\",\n    \"Online competitors offered lower prices on printer consumables.\",\n    \"42 business customers have not ordered in the last 90 days.\",\n    \"The team proposed personalized customer reactivation discounts.\",\n    \"CRM sales forecasts showed discrepancies with actual orders.\",\n    \"Black Friday promotional pricing requires coordination with Marketing.\"\n  ],\n  \"metrics\": {\n    \"monthly_revenue_eur\": 1240000,\n    \"month_over_month_growth_percent\": 7,\n    \"below_target_percent\": 4,\n    \"inactive_business_customers\": 42,\n    \"corporate_clients_renegotiating\": 3\n  },\n  \"decisions\": [\n    \"Launch a B2B customer reactivation initiative.\",\n    \"Negotiate revised contracts with priority corporate accounts.\",\n    \"Standardize CRM opportunity updates.\",\n    \"Coordinate Black Friday pricing with Marketing.\"\n  ],\n  \"action_items\": [\n    {\n      \"task_id\": \"SAL-001\",\n      \"description\": \"Contact 20 high-value inactive customers\",\n      \"owner\": \"Petar Hristov\",\n      \"deadline\": \"2026-10-20\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"SAL-002\",\n      \"description\": \"Prepare updated corporate contract proposals\",\n      \"owner\": \"Desislava Koleva\",\n      \"deadline\": \"2026-10-22\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"SAL-003\",\n      \"description\": \"Audit CRM opportunity records\",\n      \"owner\": \"Ralitsa Nikolova\",\n      \"deadline\": \"2026-10-19\",\n      \"status\": \"pending\",\n      \"priority\": \"medium\"\n    },\n    {\n      \"task_id\": \"SAL-004\",\n      \"description\": \"Align promotional pricing with Marketing\",\n      \"owner\": \"Georgi Ivanov\",\n      \"deadline\": \"2026-10-21\",\n      \"status\": \"pending\",\n      \"priority\": \"high\",\n      \"dependent_department\": \"Marketing\"\n    }\n  ],\n  \"risks\": [\n    \"Monthly revenue below target.\",\n    \"Competitive pricing pressure.\",\n    \"Customer inactivity.\",\n    \"Inaccurate CRM forecasting.\"\n  ],\n  \"department_dependencies\": [\"Marketing\", \"Logistics\", \"IT\"]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -192,
+        -96
+      ],
+      "id": "3ed96357-9170-40ce-988a-98064c7d4327",
+      "name": "Sales meeting notes"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "\n{\n  \"meeting_id\": \"IT-2026-10-15\",\n  \"company\": \"Office 1 Bulgaria\",\n  \"department\": \"IT\",\n  \"title\": \"Infrastructure, Security and Automation\",\n  \"date\": \"2026-10-15\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"10:15\",\n  \"attendees\": [\n    {\"name\": \"Aleksandar Petrov\", \"role\": \"IT Manager\"},\n    {\"name\": \"Ivan Kostov\", \"role\": \"Systems Administrator\"},\n    {\"name\": \"Kristina Todorova\", \"role\": \"IT Security Specialist\"},\n    {\"name\": \"Daniel Georgiev\", \"role\": \"Automation Developer\"}\n  ],\n  \"discussion_points\": [\n    \"Website server load increased during promotional campaigns.\",\n    \"Infrastructure utilization peaked at 87%.\",\n    \"Some employee accounts do not have multi-factor authentication enabled.\",\n    \"Daniel demonstrated an AI customer inquiry classification prototype.\",\n    \"The AI prototype categorized 89% of test inquiries correctly.\",\n    \"Complex customer inquiries were occasionally assigned to incorrect departments.\",\n    \"The team discussed automatic CRM ticket creation.\",\n    \"Aleksandar requested human review for uncertain AI classifications.\",\n    \"Marketing requested improved website analytics.\",\n    \"Logistics requested order-status API access.\",\n    \"A security assessment is required before integrating external services.\"\n  ],\n  \"metrics\": {\n    \"peak_infrastructure_utilization_percent\": 87,\n    \"ai_classification_accuracy_percent\": 89\n  },\n  \"decisions\": [\n    \"Prioritize MFA enforcement.\",\n    \"Continue testing the AI classification prototype.\",\n    \"Introduce human review for uncertain AI classifications.\",\n    \"Prepare infrastructure scaling options before Black Friday.\",\n    \"Conduct security assessments for new integrations.\"\n  ],\n  \"action_items\": [\n    {\n      \"task_id\": \"IT-001\",\n      \"description\": \"Audit MFA adoption across employee accounts\",\n      \"owner\": \"Kristina Todorova\",\n      \"deadline\": \"2026-10-20\",\n      \"status\": \"pending\",\n      \"priority\": \"critical\"\n    },\n    {\n      \"task_id\": \"IT-002\",\n      \"description\": \"Prepare server scaling proposal\",\n      \"owner\": \"Ivan Kostov\",\n      \"deadline\": \"2026-10-22\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"IT-003\",\n      \"description\": \"Improve AI classification accuracy and implement human review\",\n      \"owner\": \"Daniel Georgiev\",\n      \"deadline\": \"2026-10-27\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"IT-004\",\n      \"description\": \"Coordinate CRM and order-status API requirements\",\n      \"owner\": \"Aleksandar Petrov\",\n      \"deadline\": \"2026-10-23\",\n      \"status\": \"pending\",\n      \"priority\": \"medium\",\n      \"dependent_departments\": [\"Sales\", \"Logistics\"]\n    }\n  ],\n  \"risks\": [\n    \"High infrastructure utilization during campaigns.\",\n    \"Incomplete MFA adoption.\",\n    \"Incorrect AI inquiry classification.\",\n    \"Potential security vulnerabilities from external integrations.\"\n  ],\n  \"department_dependencies\": [\"Marketing\", \"Sales\", \"Logistics\"]\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -192,
+        96
+      ],
+      "id": "c95173df-e00f-4bbf-884d-3e2ba7fd8040",
+      "name": "IT meeting notes"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "\n{\n  \"meeting_id\": \"LOG-2026-10-14\",\n  \"company\": \"Office 1 Bulgaria\",\n  \"department\": \"Logistics\",\n  \"title\": \"Warehouse and Delivery Optimization\",\n  \"date\": \"2026-10-14\",\n  \"start_time\": \"14:00\",\n  \"end_time\": \"15:15\",\n  \"attendees\": [\n    {\"name\": \"Dimitar Angelov\", \"role\": \"Logistics Manager\"},\n    {\"name\": \"Stefan Marinov\", \"role\": \"Warehouse Supervisor\"},\n    {\"name\": \"Tsvetelina Vasileva\", \"role\": \"Inventory Controller\"},\n    {\"name\": \"Borislav Todorov\", \"role\": \"Transport Coordinator\"}\n  ],\n  \"discussion_points\": [\n    \"On-time delivery performance decreased from 96% to 91%.\",\n    \"Traffic congestion and inefficient route planning caused delays.\",\n    \"Warehouse picking errors increased for similar-looking stationery SKUs.\",\n    \"Stefan proposed barcode verification during order picking.\",\n    \"Inventory discrepancies were discovered across 27 SKUs.\",\n    \"Large corporate orders require better Sales and Logistics coordination.\",\n    \"Seasonal demand may require additional warehouse personnel.\",\n    \"Dimitar requested a cost-benefit analysis of route optimization software.\"\n  ],\n  \"metrics\": {\n    \"previous_on_time_delivery_percent\": 96,\n    \"current_on_time_delivery_percent\": 91,\n    \"inventory_discrepancy_skus\": 27,\n    \"route_optimization_solutions_to_compare\": 3\n  },\n  \"decisions\": [\n    \"Pilot barcode-based picking verification.\",\n    \"Reconcile inventory discrepancies.\",\n    \"Evaluate route optimization software.\",\n    \"Prepare a seasonal staffing forecast.\"\n  ],\n  \"action_items\": [\n    {\n      \"task_id\": \"LOG-001\",\n      \"description\": \"Complete inventory reconciliation for 27 SKUs\",\n      \"owner\": \"Tsvetelina Vasileva\",\n      \"deadline\": \"2026-10-19\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"LOG-002\",\n      \"description\": \"Design barcode verification pilot\",\n      \"owner\": \"Stefan Marinov\",\n      \"deadline\": \"2026-10-23\",\n      \"status\": \"pending\",\n      \"priority\": \"high\"\n    },\n    {\n      \"task_id\": \"LOG-003\",\n      \"description\": \"Compare three route optimization solutions\",\n      \"owner\": \"Borislav Todorov\",\n      \"deadline\": \"2026-10-26\",\n      \"status\": \"pending\",\n      \"priority\": \"medium\"\n    },\n    {\n      \"task_id\": \"LOG-004\",\n      \"description\": \"Prepare seasonal staffing forecast\",\n      \"owner\": \"Dimitar Angelov\",\n      \"deadline\": \"2026-10-22\",\n      \"status\": \"pending\",\n      \"priority\": \"medium\"\n    }\n  ],\n  \"risks\": [\n    \"Declining on-time delivery performance.\",\n    \"Increasing warehouse picking errors.\",\n    \"Inventory discrepancies.\",\n    \"Potential seasonal warehouse understaffing.\"\n  ],\n  \"department_dependencies\": [\"Sales\", \"IT\", \"Marketing\"]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -192,
+        288
+      ],
+      "id": "ba687450-c651-4283-af04-65c1dd3a1559",
+      "name": "Logistics meeting notes"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        -32
+      ],
+      "id": "cd572074-fca8-4bd9-a37e-ae2539b59bbc",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "chunkingMode": "advanced",
+        "options": {
+          "summarizationMethodAndPrompts": {
+            "values": {
+              "combineMapPrompt": "You are summarizing ONE internal company meeting. The meeting data is below in JSON (JavaScript Object Notation) format.\n\n{text}\n\nWrite a concise summary with these sections:\n- Department & meeting: department name, title, date\n- Key points: 3-4 bullets with the most important facts and numbers\n- Decisions: what was agreed\n- Action items: task, owner, deadline, priority\n- Risks: main risks mentioned\n- Needs from other departments: only dependencies explicitly described in the meeting data. If only a department name is listed without details, write just the name.\n\nUse only information from the meeting data. Do not invent facts. Keep all numbers exactly as given.",
+              "prompt": "Below are summaries of several morning meetings from different departments of the same company.\n\n{text}\n\nWrite a short \"Morning Meetings Summary\" for company management. Maximum 250 words.\n\nSections:\n1. Overview: 2 sentences on the overall situation.\n2. Department highlights: 1-2 bullets per department, most important facts and numbers only.\n3. Key dependencies: max 3 bullets, only dependencies explicitly mentioned in the summaries.\n4. Top 3 risks: one line each.\n5. Urgent deadlines: only high or critical priority items due in the next 7 days (date, owner, task).\n\nUse only information from the summaries. Do not guess or add assumptions. Keep numbers exactly as given."
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2.1,
+      "position": [
+        608,
+        0
+      ],
+      "id": "1b84a1c0-3bba-4721-a5dc-512ed0ed2fa6",
+      "name": "Summarization Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        608,
+        192
+      ],
+      "id": "c9e396da-7afd-4907-ad26-1ce1f4563912",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "separator": "======MEETING=====",
+        "chunkSize": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        752,
+        192
+      ],
+      "id": "37b6d8e4-6c9a-47e7-a60e-f580f904c917",
+      "name": "Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $('Schedule Trigger').item.json.timestamp }}",
+        "format": "custom",
+        "customFormat": "dd-MM-yyyy",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "b22ffd88-ce7d-4ac8-ac7d-5bc606d1dac6",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "content": "## summarization chain \nДа разбирам ли, че при Map reduce няма вариант в който summarization chain получава 4 различни items и  накрая да ми подаде 1 item? Винаги ли трябва да се агрегира инпута в 1 item преди summarization chain-a?\n\n",
+        "height": 192,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -224
+      ],
+      "id": "2e12ce00-f675-442e-b7e2-447e76ff8044",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Take all 4 meetings coming from the Merge node\nconst meetings = $input.all().map(item => item.json);\n\n// 2. Turn each meeting into readable text and join them,\n//    putting a divider between meetings so the chain\n//    knows where to cut later\nconst text = meetings\n  .map(m => JSON.stringify(m, null, 2))\n  .join('\\n=====MEETING=====\\n');\n\n// 3. Output ONE item with everything inside a field called \"text\"\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ],
+      "id": "351ae714-f0bb-4822-a7b6-d717c88dfb6a",
+      "name": "Aggregate + separator"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5c172e68-e127-4e62-bcfe-5073e6a477af",
+              "name": "Summary",
+              "value": "={{ $('Summarization Chain').item.json.output.text }}",
+              "type": "string"
+            },
+            {
+              "id": "da28c793-101b-44fb-9ad2-ca65dc91794c",
+              "name": "Date",
+              "value": "={{ $json.formattedDate }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "37870b95-adfe-46a5-a565-430cd3ddcf0b",
+      "name": "Combine date + summary"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Marketing meeting notes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sales meeting notes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IT meeting notes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Logistics meeting notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marketing meeting notes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sales meeting notes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "IT meeting notes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Logistics meeting notes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate + separator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Combine date + summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate + separator": {
+      "main": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

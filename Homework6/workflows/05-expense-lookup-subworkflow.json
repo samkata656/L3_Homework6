@@ -1,0 +1,240 @@
+{
+  "name": "L3/H6 expense Look up",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "employee_email"
+            },
+            {
+              "name": "code"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        32
+      ],
+      "name": "When Executed by Another Workflow",
+      "id": "a22ab1ea-72a3-416b-8805-a9c7b6801dcd"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "M1xMXh5cBf3dXCKi",
+          "mode": "list",
+          "cachedResultName": "chat_codes"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.employee_email.toLowerCase() }}"
+            },
+            {
+              "keyName": "code",
+              "keyValue": "={{ String($json.code).trim() }}"
+            },
+            {
+              "keyName": "expires_at",
+              "condition": "gte",
+              "keyValue": "={{ $now.toUTC().toISO() }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        32
+      ],
+      "name": "Check code",
+      "alwaysOutputData": true,
+      "id": "3a25fe9d-84db-4ee5-9b78-cd7c88a06a83"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        32
+      ],
+      "name": "Code valid?",
+      "id": "1e849e54-7cc3-46fd-987a-90489b487aaf"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Df2zyf90qr8zIrED",
+          "mode": "list",
+          "cachedResultName": "expenses"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "employee_email",
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.employee_email.toLowerCase() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -80
+      ],
+      "name": "Get my expenses",
+      "alwaysOutputData": true,
+      "id": "ff857a31-5f9b-4883-88bc-638fffd9626f"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id"
+            },
+            {
+              "aggregation": "sum",
+              "field": "total_eur"
+            },
+            {
+              "aggregation": "sum",
+              "field": "approved_amount_eur"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "category",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        -80
+      ],
+      "name": "Summarize by category",
+      "id": "b5d07e16-2a1c-43fa-bc4d-f76e2b52df02"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "x1",
+              "name": "result",
+              "value": "ACCESS DENIED: the verification code is wrong or has expired. No data was returned. Ask the employee to check the code, or offer to send a new one.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        144
+      ],
+      "name": "Result: access denied",
+      "id": "98f4500e-f4cb-465e-b51f-56fc334068b1"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Check code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check code": {
+      "main": [
+        [
+          {
+            "node": "Code valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code valid?": {
+      "main": [
+        [
+          {
+            "node": "Get my expenses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Result: access denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get my expenses": {
+      "main": [
+        [
+          {
+            "node": "Summarize by category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

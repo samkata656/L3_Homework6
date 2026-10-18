@@ -1,0 +1,52 @@
+{
+  "name": "L3/H6 Error",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6eb512de-4a65-45c9-96a5-e239a5b046fd",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "finance@example.com",
+        "subject": "=⚠️ Workflow failed: {{ $json.workflow.name }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\"> <tr><td align=\"center\"> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:560px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\"> <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\"> <span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span> <span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span> <span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">SYSTEM ALERT</span> </td></tr> <tr><td style=\"padding:28px;\"> <span style=\"display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#E5484D;border:1px solid #E5484D;border-radius:4px;padding:3px 8px;\">WORKFLOW FAILED</span> <h1 style=\"margin:16px 0 20px;font-size:22px;font-weight:700;color:#F2EFE9;\">{{ $json.workflow.name }}</h1> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border:1px solid #2E2E35;border-radius:8px;font-size:14px;color:#F2EFE9;\"> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;\">FAILED NODE</td><td style=\"padding:10px 16px;\">{{ $json.execution.lastNodeExecuted }}</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">TIME</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $now.setZone('Europe/Sofia').toFormat('dd.MM.yyyy HH:mm') }}</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">EXECUTION</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">#{{ $json.execution.id }}</td></tr> </table> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border-left:3px solid #E5484D;border-radius:6px;margin:16px 0 20px;\"> <tr><td style=\"padding:12px 16px;\"> <div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;color:#8C8C96;margin-bottom:4px;\">ERROR</div> <div style=\"font-size:13px;color:#F2EFE9;line-height:1.5;font-family:'JetBrains Mono',Consolas,monospace;\">{{ $json.execution.error.message }}</div> </td></tr> </table> <a href=\"{{ $json.execution.url }}\" style=\"display:inline-block;background:#FF6B35;color:#0D0D0F;font-weight:600;font-size:14px;text-decoration:none;padding:10px 18px;border-radius:6px;\">Open failed execution</a> </td></tr> </table> </td></tr> </table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f6930813-3c9b-40f3-b8ae-5515d5ed763b",
+      "name": "Send a message",
+      "webhookId": "15abf634-ea34-4a3b-b40b-66a460123bff"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

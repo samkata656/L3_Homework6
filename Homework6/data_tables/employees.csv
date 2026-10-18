@@ -1,0 +1,8 @@
+email,name,department,role,manager_email
+samuil@example.com,Samuil Nikolov,Operations,employee,your-email@example.com
+ivan.petrov@example.com,Ivan Petrov,Sales,employee,your-email@example.com
+maria.ivanova@example.com,Maria Ivanova,Marketing,employee,your-email@example.com
+georgi.dimitrov@example.com,Georgi Dimitrov,IT,employee,your-email@example.com
+elena.stoyanova@example.com,Elena Stoyanova,Finance,employee,your-email@example.com
+nikolay.kolev@example.com,Nikolay Kolev,Sales,employee,your-email@example.com
+your-email@example.com,Petar Angelov,Management,manager,

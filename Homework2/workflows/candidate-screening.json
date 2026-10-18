@@ -1,0 +1,598 @@
+{
+  "name": "L3/H2",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Tell us more about you",
+        "formDescription": "We'll get back to you soon",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "What is your name?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your email?",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your phone number country code?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Bulgaria (+359)"
+                  },
+                  {
+                    "option": "Germany (+49)"
+                  },
+                  {
+                    "option": "Tajikistan (+992)"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your phone number?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Have you worked with any of the following software?",
+              "fieldType": "checkbox",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "n8n"
+                  },
+                  {
+                    "option": "Claude Code"
+                  },
+                  {
+                    "option": "Codex"
+                  },
+                  {
+                    "option": "Stability Matrix"
+                  },
+                  {
+                    "option": "Linux Ubuntu"
+                  },
+                  {
+                    "option": "OpenClaw"
+                  },
+                  {
+                    "option": "Hermes"
+                  },
+                  {
+                    "option": "Ollama"
+                  },
+                  {
+                    "option": "Python"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Tell us more about your professional experience:",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "What is your expected gross monthly salary (eur)? ",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "42bcf868-5705-483a-bc86-729260916b43",
+      "name": "On form submission",
+      "webhookId": "dc02f9c8-f732-43db-af51-cc945f7537a3"
+    },
+    {
+      "parameters": {
+        "text": "=Full name: {{ $json[\"What is your name?\"] }}\nEmail: {{ $json[\"What is your email?\"] }}\nPhone: {{ $json[\"What is your phone number country code?\"] }}{{ $json[\"What is your phone number?\"] }}\nSkills: {{ $json[\"Have you worked with any of the following software?\"] }}\nWorks summary: {{ $json[\"Tell us more about your professional experience:\"] }}",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"fullName\": \"Ivan Petrov\",\n  \"email\": \"ivan.petrov@example.com\",\n  \"phone\": \"+359888123456\",\n  \"yearsOfExperience\": 5,\n  \"skills\": [\"n8n\", \"Python\", \"Excel\"],\n  \"workSummary\": \"Worked as an automation specialist at X from 2019 to 2024.\"\n}",
+        "options": {
+          "systemPromptTemplate": "=You are an expert HR in software company that extracts information from job applications. Combine the selected skills with any extra skills mentioned in the work experience summary. For years of experience, extract the years only in the IT industry and use the self-reported number or calculate it from the dates provided. Today's date is {{ $now.toFormat('yyyy-MM-dd') }}. Only extract information that is present. If a value is missing, return an empty string (or 0 for numbers)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "877ae02b-fbf2-4097-b19f-e2536d04e580",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "content": "## Test data \n**I have thrown meatballs on the grill for 20 months. I calculated the meatballs made in excel. I have worked in DHL as software automation specialist from 30.10.2021 to 04.04.2026. I was writing python scrpits using mainly vs code.\n",
+        "height": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -256
+      ],
+      "id": "df8f5d06-96b4-4087-ac0a-63f5671c3ec9",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "ebefe53e-1235-4cda-bd34-2332f7d213af",
+              "leftValue": "={{ $json.output.yearsOfExperience }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "055db823-bdf9-41f2-ac4c-4696497a198b",
+              "leftValue": "={{ $json.output.skills }}",
+              "rightValue": "n8n",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "37724d9d-7f28-4411-a9ac-70fd49a85679",
+              "leftValue": "={{ $json.output.skills }}",
+              "rightValue": "ollama",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        592,
+        0
+      ],
+      "id": "a670bc96-e2ba-4163-91af-28dc8a50a384",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "L3/H2 candidates list",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Phone number": "={{ $json[\"Phone number\"] }}",
+            "Email": "={{ $json.Email }}",
+            "Skills": "={{ $json.Skills }}",
+            "Experience": "={{ $json.Experience }}",
+            "Total score": "={{ $json.Score }}",
+            "reasoning": "={{ $json.Reasoning }}",
+            "expected salary": "={{ $('On form submission').item.json[\"What is your expected gross monthly salary (eur)? \"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Skills",
+              "displayName": "Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Experience",
+              "displayName": "Experience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total score",
+              "displayName": "Total score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "expected salary",
+              "displayName": "expected salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1520,
+        -256
+      ],
+      "id": "724f06a6-a4db-4ae8-bb06-58a7c0ab2d5d",
+      "name": "Append row in sheet"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "   { \"experienceScore\": 20, \"skillsScore\": 42, \"totalScore\": 62, \"reasoning\": \"Short explanation\" }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        -80
+      ],
+      "id": "e25d0570-d6f2-4532-8132-2a40688a28dd",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "id": "9c9a8f2f-3fd5-4aeb-bfa3-092ff59c191b",
+      "name": "Unqualified Candidates",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "67f6af3f-4893-4fe5-b61e-84c4441dbbb9",
+              "name": "Name",
+              "value": "={{ $('If').item.json.output.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "57ebc972-3264-4c09-b10e-ee98c0a30e7c",
+              "name": "Phone number",
+              "value": "={{ (() => {\n  const code = $('On form submission').item.json[\"What is your phone number country code?\"].match(/\\d+/)[0];\n  let n = $('On form submission').item.json[\"What is your phone number?\"].replace(/\\D/g, '');\n  if (n.startsWith('00' + code)) n = n.slice(code.length + 2);\n  else if (n.startsWith(code)) n = n.slice(code.length);\n  n = n.replace(/^0+/, '');\n  return '+' + code + n;\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "9bcf9dcf-f243-4314-9af4-b29583d8b3bf",
+              "name": "Email",
+              "value": "={{ $('If').item.json.output.email }}",
+              "type": "string"
+            },
+            {
+              "id": "390da949-19a0-4b04-bcf2-2e2829d6bfaa",
+              "name": "Skills",
+              "value": "={{ $('If').item.json.output.skills.join(', ').toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "72147722-3b03-4674-8c6f-2cb57ffbd23e",
+              "name": "Experience",
+              "value": "={{ $('If').item.json.output.yearsOfExperience }} years",
+              "type": "string"
+            },
+            {
+              "id": "9f271617-cca7-4d1f-b42f-b066d4a48ddf",
+              "name": "Score",
+              "value": "={{ $json.output.totalScore }}",
+              "type": "string"
+            },
+            {
+              "id": "1972305c-5e2d-4e9d-8359-ef9df79bc620",
+              "name": "Reasoning",
+              "value": "={{ $json.output.reasoning }}",
+              "type": "string"
+            },
+            {
+              "id": "00f61be4-e272-4ccf-b551-feb34417823f",
+              "name": "Expected salary",
+              "value": "={{ $('On form submission').item.json[\"What is your expected gross monthly salary (eur)? \"] }} eur",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        -256
+      ],
+      "id": "3319a384-a2f5-4f8c-97e1-02d0c5201c63",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Score this job candidate using these exact rules.\n\nEXPERIENCE SCORE (0–50): 5 points per year of IT experience, maximum 50.\n\nSKILLS SCORE (0–50): add points for every skill the candidate has:\n- Core skills, 10 points each: n8n, Claude Code, Ollama, Python\n- Relevant skills, 5 points each: Codex, OpenClaw, Hermes, Stability Matrix, Linux Ubuntu\n- Any other technical skill, or knowledge of working with sofware instrumnets 2 points each\nCount each skill once, ignore upper/lower case. Maximum 50.\n\ntotalScore = experienceScore + skillsScore.\nIn \"reasoning\", list which skills earned points and how many.\n\nCandidate:\nYears of IT experience: {{ $json.output.yearsOfExperience }}\nSkills: {{ $json.output.skills.join(', ') }}\nWork summary: {{ $json.output.workSummary }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        880,
+        -256
+      ],
+      "id": "e113e876-3e90-4600-bfce-8859eb5e1ad4",
+      "name": "Enrich and scoring"
+    },
+    {
+      "parameters": {
+        "content": "Във формата нарочно няма поле за \"години опит в сферата\". Information extractor-a  трябва да я намери/изчисли\n\n",
+        "height": 192,
+        "color": "#164346"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -256
+      ],
+      "id": "130142e7-33dd-4940-b63d-7f6408009c45",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Scoring\n\nScoring (0–100):\nExperience: 5 points per year, max 50.\nSkills: core skills (n8n, Claude Code, Ollama, Python) 10 points each; relevant skills (Codex, OpenClaw, Hermes, Stability Matrix, Linux Ubuntu) 5 each; other technical skills 2 each. Max 50.",
+        "height": 240
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -512
+      ],
+      "id": "10096ef3-420a-42cb-98d4-e3e24d66ae85",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Edit fields\n\nОправя формата на телефона от гадната форма която направих и струтурира информацията преди таблицата\n"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -448
+      ],
+      "id": "01637272-9e5f-4dfa-88d0-923b0be56af5",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        224,
+        192
+      ],
+      "id": "f4b32912-a3e3-4139-b0cc-04d636546bd2",
+      "name": "gpt-4o-mini"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -64
+      ],
+      "id": "9743b660-7c7a-490d-907d-3c6a8eeccc40",
+      "name": "gpt-5-mini"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Enrich and scoring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unqualified Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Enrich and scoring",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich and scoring": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt-4o-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt-5-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Enrich and scoring",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

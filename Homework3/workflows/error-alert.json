@@ -1,0 +1,50 @@
+{
+  "name": "L3/H3 error",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -16
+      ],
+      "id": "f6947a16-0480-4cc8-b103-3190a0e9d3a9",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "=[samkoBuilds] Workflow stopped: uncategorised submission",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;\">   <tr><td align=\"center\">     <table width=\"560\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:560px;width:100%;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\">        <!-- Header -->       <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\">         <span style=\"font-family:Montserrat,Arial,sans-serif;font-size:20px;font-weight:700;color:#F2EFE9;\">samko<span style=\"color:#FF6B35;\">B</span>uilds</span>         <span style=\"float:right;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#E5484D;border:1px solid #E5484D;border-radius:4px;padding:3px 8px;\">STOPPED</span>       </td></tr>        <!-- Intro -->       <tr><td style=\"padding:24px 28px 8px;\">         <p style=\"margin:0 0 6px;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#8C8C96;\">WORKFLOW ALERT</p>         <h1 style=\"margin:0 0 12px;font-family:Montserrat,Arial,sans-serif;font-size:22px;font-weight:600;color:#F2EFE9;\">A submission couldn't be categorised</h1>         <p style=\"margin:0;font-family:Montserrat,Arial,sans-serif;font-size:15px;font-weight:300;line-height:1.6;color:#F2EFE9;\">           The classifier didn't match it to Technology, Business, Health, Entertainment or Sports, so it was sent to the \"Other\" branch and the run was stopped on purpose. Here's what came in:         </p>       </td></tr>        <!-- Error message -->       <tr><td style=\"padding:16px 28px;\">         <div style=\"background:#0D0D0F;border-left:3px solid #E5484D;border-radius:6px;padding:14px 16px;font-family:'JetBrains Mono',Consolas,monospace;font-size:13px;line-height:1.5;color:#F2EFE9;\">           {{ $json.execution.error.message }}         </div>       </td></tr>        <!-- Meta -->       <tr><td style=\"padding:8px 28px 24px;font-family:'JetBrains Mono',Consolas,monospace;font-size:12px;line-height:1.8;color:#8C8C96;\">         workflow: <span style=\"color:#F2EFE9;\">{{ $json.workflow.name }}</span><br>         time: <span style=\"color:#F2EFE9;\">{{ $now.toFormat('dd.MM.yyyy HH:mm') }}</span>       </td></tr>        <!-- Button -->       <tr><td style=\"padding:0 28px 28px;\">         <a href=\"{{ $json.execution.url }}\" style=\"display:inline-block;background:#FF6B35;color:#0D0D0F;font-family:Montserrat,Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;padding:10px 18px;border-radius:6px;\">View execution</a>       </td></tr>        <!-- Footer -->       <tr><td style=\"padding:16px 28px;border-top:1px solid #2E2E35;font-family:Montserrat,Arial,sans-serif;font-size:12px;font-weight:300;color:#8C8C96;\">         Sent automatically by n8n · <a href=\"https://samkobuilds.com\" style=\"color:#4DA6FF;text-decoration:none;\">samkobuilds.com</a>       </td></tr>      </table>   </td></tr> </table>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        -16
+      ],
+      "id": "f612ef96-4562-43a0-ba73-51d1825a4657",
+      "name": "Send a message",
+      "webhookId": "82c3e6a7-d5a4-4c00-a40d-edf9d34918f4"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

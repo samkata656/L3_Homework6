@@ -1,0 +1,985 @@
+{
+  "name": "L3/H1 - Customer Feedback Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "K4NjDxO4eJ5AhrW7",
+          "cachedResultName": "customer_feedback"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        432
+      ],
+      "id": "a1f6f392-e63c-44eb-83ac-dceeaa9f03e1",
+      "name": "Get Feedback (Data Table)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2cd6a5b4-221a-449a-910f-860914de221c",
+              "name": "feedback_id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "6c58b6c4-2b42-486e-9824-c09405ce4650",
+              "name": "customer_name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "c598f7ff-a919-49b0-9001-d04eb7fc3862",
+              "name": "Feedback",
+              "value": "={{ $json.Feedback }}",
+              "type": "string"
+            },
+            {
+              "id": "8f69773b-15e7-41c2-87fa-ddffd7ef0efd",
+              "name": "analyzed_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "1e588521-576b-4398-ab2a-40a0ddde2a46",
+              "name": "sentiment_category",
+              "value": "={{ $json.sentimentAnalysis.category }}",
+              "type": "string"
+            },
+            {
+              "id": "1abebf81-cd75-4e17-8701-00d94ae0c154",
+              "name": "sentiment_strength",
+              "value": "={{ $json.sentimentAnalysis.strength }}",
+              "type": "number"
+            },
+            {
+              "id": "d8166cd3-e549-44e3-a7b6-3ff4603e70bf",
+              "name": "sentiment_confidence",
+              "value": "={{ $json.sentimentAnalysis.confidence }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        384
+      ],
+      "id": "918dab1e-9d80-422a-94b6-609637553b5a",
+      "name": "Enrich: Timestamp + Scores"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "82fbe7ce-2655-4288-83e0-5dcebe6635e8",
+              "leftValue": "={{ $json.sentiment_category }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        384
+      ],
+      "id": "3c9a28f7-7d32-4226-99ad-a98bb6be0eb6",
+      "name": "Filter: Negative Only"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "59c35ce3-d7c4-419c-a22b-531a4aaa7f62",
+              "name": "is_urgent",
+              "value": "={{ $json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85 }}",
+              "type": "boolean"
+            },
+            {
+              "id": "764ccca7-1f66-4100-9994-99762eb5c392",
+              "name": "priority",
+              "value": "={{ ($json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85) ? 'URGENT' : 'Normal' }}",
+              "type": "string"
+            },
+            {
+              "id": "a3fa7255-3556-4900-8846-fd8385c04625",
+              "name": "urgency_reason",
+              "value": "={{ ($json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85) ? 'Very negative (strength & confidence >= 0.85)' : 'Negative, below urgency threshold' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        384
+      ],
+      "id": "8b2b369f-49bf-4a99-9aa5-24b886712991",
+      "name": "Flag Urgent (Strength + Confidence)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================================================\n// Build Email Report — samkoBuilds branded\n// Paste into the \"Build Email Report\" Code node\n// Mode: \"Run Once for All Items\"\n// Works with V1 and V2 (issue_type column only shows if it exists)\n// =============================================================\n\n// ---- Brand tokens (samkoBuilds Brand Guidelines v1.0) ----\nconst C = {\n  core:    '#0D0D0F', // Charcoal Core – page background\n  c900:    '#17171B', // card surface\n  c800:    '#232328', // table header / alt rows\n  c500:    '#55555F', // borders\n  c300:    '#8C8C96', // muted text\n  paper:   '#F2EFE9', // main text\n  orange:  '#FF6B35', // Signal Orange – accent only\n  error:   '#E5484D', // URGENT badge\n  warning: '#F2B705', // Normal badge\n};\nconst SANS = \"Montserrat, 'Segoe UI', Arial, sans-serif\";\nconst MONO = \"'JetBrains Mono', Consolas, 'Courier New', monospace\";\n\n// ---- Get the rows (works after an Aggregate node OR directly after Filter) ----\nconst rows = $json.data ?? $input.all().map(i => i.json);\n\n// ---- Helpers ----\n// Escape text so customer comments can't break the HTML\nconst esc = (v) => String(v ?? '')\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')\n  .replace(/\"/g, '&quot;').trim();\n\nconst fmtTime = (iso) => {\n  try { return DateTime.fromISO(iso).setZone('Europe/Sofia').toFormat('dd.MM.yyyy HH:mm'); }\n  catch (e) { return esc(iso); }\n};\n\nconst badge = (text, color) =>\n  `<span style=\"display:inline-block;padding:3px 8px;border:1px solid ${color};border-radius:4px;color:${color};font-family:${MONO};font-size:11px;letter-spacing:1px;\">${esc(text).toUpperCase()}</span>`;\n\nconst hasIssue = rows.some(r => r.issue_type);\n\n// ---- Sort: urgent first, then strongest emotion ----\nrows.sort((a, b) =>\n  (Number(b.is_urgent) - Number(a.is_urgent)) ||\n  ((b.sentiment_strength ?? 0) - (a.sentiment_strength ?? 0)));\n\nconst total  = rows.length;\nconst urgent = rows.filter(r => r.is_urgent).length;\nconst runAt  = DateTime.now().setZone('Europe/Sofia').toFormat('dd.MM.yyyy HH:mm');\n\n// ---- Stat tile ----\nconst stat = (label, value, color) => `\n  <td width=\"50%\" style=\"padding:16px;background:${C.c900};border:1px solid ${C.c500};border-radius:6px;\">\n    <div style=\"font-family:${MONO};font-size:11px;letter-spacing:1.5px;color:${C.c300};\">${label}</div>\n    <div style=\"font-family:${SANS};font-size:28px;font-weight:700;color:${color};padding-top:4px;\">${value}</div>\n  </td>`;\n\n// ---- Table rows ----\nconst th = (t) => `<th align=\"left\" style=\"padding:10px 12px;font-family:${MONO};font-size:11px;letter-spacing:1px;font-weight:400;color:${C.c300};border-bottom:1px solid ${C.c500};\">${t}</th>`;\nconst td = (content, extra = '') => `<td valign=\"top\" style=\"padding:12px;border-bottom:1px solid ${C.c800};${extra}\">${content}</td>`;\n\nconst bodyRows = rows.map((r, i) => {\n  const urgentRow = !!r.is_urgent;\n  const bg = i % 2 ? C.c900 : C.core;\n  const leftBar = urgentRow ? `border-left:3px solid ${C.error};` : `border-left:3px solid transparent;`;\n  return `<tr style=\"background:${bg};\">\n    ${td(badge(r.priority ?? (urgentRow ? 'Urgent' : 'Normal'), urgentRow ? C.error : C.warning), leftBar)}\n    ${td(`<div style=\"font-family:${SANS};font-size:14px;font-weight:500;color:${C.paper};\">${esc(r.customer_name)}</div>\n          <div style=\"font-family:${MONO};font-size:11px;color:${C.c300};padding-top:2px;\">#${esc(r.feedback_id)} · ${fmtTime(r.analyzed_at)}</div>`)}\n    ${td(`<div style=\"font-family:${SANS};font-size:14px;font-weight:300;line-height:1.6;color:${C.paper};\">“${esc(r.Feedback)}”</div>\n          ${r.urgency_reason ? `<div style=\"font-family:${MONO};font-size:11px;color:${C.c300};padding-top:6px;\">→ ${esc(r.urgency_reason)}</div>` : ''}`)}\n    ${hasIssue ? td(`<span style=\"font-family:${MONO};font-size:12px;color:${r.issue_type === 'Critical issue' ? C.orange : C.c300};\">${esc(r.issue_type)}</span>`) : ''}\n    ${td(`<span style=\"font-family:${MONO};font-size:12px;color:${C.paper};\">${esc(r.sentiment_strength)}</span>`, 'text-align:center;')}\n    ${td(`<span style=\"font-family:${MONO};font-size:12px;color:${C.paper};\">${esc(r.sentiment_confidence)}</span>`, 'text-align:center;')}\n  </tr>`;\n}).join('');\n\n// ---- Full email ----\nconst html = `\n<div style=\"margin:0;padding:24px 0;background:${C.core};\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:760px;margin:0 auto;background:${C.core};font-family:${SANS};color:${C.paper};\">\n\n  <!-- Header: monogram + wordmark -->\n  <tr><td style=\"padding:24px 28px 20px 28px;border-bottom:1px solid ${C.c800};\">\n    <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\"><tr>\n      <td style=\"width:40px;height:40px;background:${C.c900};border-radius:6px;text-align:center;vertical-align:middle;font-family:${SANS};font-size:20px;font-weight:700;\">\n        <span style=\"color:${C.paper};\">s</span><span style=\"color:${C.orange};\">B</span>\n      </td>\n      <td style=\"padding-left:12px;font-family:${SANS};font-size:18px;font-weight:600;color:${C.paper};\">samkoBuilds</td>\n    </tr></table>\n  </td></tr>\n\n  <!-- Title -->\n  <tr><td style=\"padding:28px 28px 8px 28px;\">\n    <div style=\"font-family:${MONO};font-size:11px;letter-spacing:2px;color:${C.orange};\">FEEDBACK ANALYZER · RUN ${runAt}</div>\n    <div style=\"font-family:${SANS};font-size:26px;font-weight:700;line-height:1.15;color:${C.paper};padding-top:8px;\">Customer feedback that needs attention</div>\n    <div style=\"font-family:${SANS};font-size:15px;font-weight:300;line-height:1.6;color:${C.c300};padding-top:8px;\">\n      Every comment was scored for sentiment${hasIssue ? ' and checked for blocking issues (refunds, wrong or missing orders, payment problems)' : ''}. Urgent items are listed first.\n    </div>\n  </td></tr>\n\n  <!-- Stats -->\n  <tr><td style=\"padding:16px 28px;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"8\" style=\"border-collapse:separate;\"><tr>\n      ${stat('NEEDS ATTENTION', total, C.paper)}\n      ${stat('URGENT', urgent, urgent ? C.error : C.paper)}\n    </tr></table>\n  </td></tr>\n\n  <!-- Table -->\n  <tr><td style=\"padding:8px 28px 24px 28px;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid ${C.c800};border-collapse:collapse;\">\n      <tr style=\"background:${C.c800};\">\n        ${th('PRIORITY')}${th('CUSTOMER')}${th('FEEDBACK')}${hasIssue ? th('ISSUE') : ''}${th('STRENGTH')}${th('CONF.')}\n      </tr>\n      ${bodyRows || `<tr><td colspan=\"6\" style=\"padding:20px;font-family:${SANS};font-weight:300;color:${C.c300};\">No negative feedback in this run.</td></tr>`}\n    </table>\n  </td></tr>\n\n  <!-- Footer -->\n  <tr><td style=\"padding:20px 28px;border-top:1px solid ${C.c800};font-family:${MONO};font-size:11px;color:${C.c300};line-height:1.6;\">\n    Generated automatically by an n8n workflow · Sentiment by LLM (Large Language Model), so scores are estimates — check before acting.<br>\n    <a href=\"https://samkobuilds.com\" style=\"color:${C.orange};text-decoration:none;\">samkobuilds.com</a> · Building the skills to build with AI.\n  </td></tr>\n\n</table>\n</div>`;\n\nreturn [{\n  json: {\n    subject: urgent\n      ? `[samkoBuilds] ${urgent} urgent / ${total} feedback items need attention`\n      : `[samkoBuilds] ${total} feedback items need attention`,\n    html,\n    total_items: total,\n    urgent_count: urgent,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        384
+      ],
+      "id": "6c687b13-1376-47d5-ad45-4c6bf1e7a6df",
+      "name": "Build Email Report"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        384
+      ],
+      "id": "17acbfe3-3665-426f-b7b3-bdafa774ac09",
+      "name": "Send Email (Gmail)",
+      "webhookId": "378e6bc3-dee6-410a-b715-a7b5a6fb4dfb"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.Feedback }}",
+        "options": {
+          "categories": "Positive, Neutral, Negative",
+          "includeDetailedResults": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        416
+      ],
+      "id": "f1e26b95-e9b1-4ec5-95ca-bb7c42546b08",
+      "name": "Sentiment Analysis1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        128,
+        624
+      ],
+      "id": "659468d8-5ee9-427a-8851-717e34d05010",
+      "name": "OpenRouter Chat Model1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        384
+      ],
+      "id": "7a01c396-c255-4b7a-8db4-4bc44b485922",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        528,
+        384
+      ],
+      "id": "233dafc0-e652-4130-89e4-1a253b863773",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        784
+      ],
+      "id": "c26fecbd-6e24-4695-9e04-1d3b6c4a5843",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.Feedback }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Critical issue",
+              "description": "The customer is blocked or losing money and someone must act: order missing, wrong, damaged or defective; no order confirmation; refund or payment problem (e.g. charged twice); support not responding to an open problem. Classify by the FACTS, not the tone - a polite message can still be critical."
+            },
+            {
+              "category": "Complaint",
+              "description": "The customer is unhappy (quality, speed, website, general experience) but nothing is blocking them and no action is required to unblock an order or payment."
+            },
+            {
+              "category": "No issue",
+              "description": "Positive or neutral feedback, or a general question with no problem reported."
+            }
+          ]
+        },
+        "options": {
+          "fallback": "other"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        976
+      ],
+      "id": "a27a3a04-91e1-4d4a-88a8-be0fcc5d59dc",
+      "name": "Issue Classifier"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        784,
+        1248
+      ],
+      "id": "a205f3cd-89a9-4305-b985-c33cc3c07c02",
+      "name": "OpenRouter Chat Model (Classifier)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "70ae692e-c6a6-4d00-839e-4328940d54d1",
+              "name": "issue_type",
+              "value": "Critical issue",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        816
+      ],
+      "id": "cd7d4606-8712-4c46-8040-cc531f3b3371",
+      "name": "Tag: Critical issue"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "65388996-d4d7-4bff-bf2c-43babf8dfb27",
+              "name": "issue_type",
+              "value": "Complaint",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        1040
+      ],
+      "id": "b198b086-3337-4a12-b57b-eb3308404a21",
+      "name": "Tag: Complaint"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "af1b3aff-81c0-4b4b-b774-f2d2f13fcb4e",
+              "name": "issue_type",
+              "value": "No issue",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        1264
+      ],
+      "id": "c46df86f-b473-44c2-8376-d342eaa33a0e",
+      "name": "Tag: No issue"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e92e6114-1b18-4317-bb56-4dd5fb4b76af",
+              "name": "is_urgent",
+              "value": "={{ $json.issue_type === 'Critical issue' || ($json.sentiment_category === 'Negative' && $json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "6440d88f-5558-4fc4-b601-389223730134",
+              "name": "priority",
+              "value": "={{ ($json.issue_type === 'Critical issue' || ($json.sentiment_category === 'Negative' && $json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85)) ? 'URGENT' : 'Normal' }}",
+              "type": "string"
+            },
+            {
+              "id": "deeda25d-9608-442b-b21a-0c2f7376fc14",
+              "name": "urgency_reason",
+              "value": "={{ $json.issue_type === 'Critical issue' && ($json.sentiment_category === 'Negative' && $json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85) ? 'Critical issue + very negative' : $json.issue_type === 'Critical issue' ? 'Critical issue (blocked customer)' : ($json.sentiment_category === 'Negative' && $json.sentiment_strength >= 0.85 && $json.sentiment_confidence >= 0.85) ? 'Very negative (strength & confidence >= 0.85)' : 'Below urgency threshold' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1728,
+        1168
+      ],
+      "id": "8ab780d3-f188-4ac3-b9be-76d4952df4ac",
+      "name": "Calculate Urgency"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bbeaaba1-0a28-4ece-8b8a-02b8650e8f2c",
+              "leftValue": "={{ $json.sentiment_category }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "bba238a2-3a28-4594-894c-44250481a557",
+              "leftValue": "={{ $json.issue_type }}",
+              "rightValue": "Critical issue",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1968,
+        1168
+      ],
+      "id": "bf9013fc-15d9-4112-b4d0-238dc6b3ec3a",
+      "name": "Filter: Negative OR Critical"
+    },
+    {
+      "parameters": {
+        "content": "# Issue classifier\n\n### Добавих го, тъй като коментарите на които трябва спешно да се обърне внимание не винаги е задължително да са негативни - За пример е ползван Джордж Рест с коментара \"Момчетата са супер, но все още не съм получил потвърждение на поръчката ми\"",
+        "height": 492,
+        "width": 296
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        752,
+        688
+      ],
+      "id": "3a4d4865-b977-42fa-9baa-c612d99d267e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "K4NjDxO4eJ5AhrW7",
+          "cachedResultName": "customer_feedback"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        1008
+      ],
+      "id": "8d386b65-4bf2-4c70-af03-ba3410c38421",
+      "name": "Get Feedback (Data Table)1"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.Feedback }}",
+        "options": {
+          "categories": "Positive, Neutral, Negative",
+          "includeDetailedResults": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        992
+      ],
+      "id": "b1793ebd-179f-47ee-8626-84139b004845",
+      "name": "Sentiment Analysis2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "548b047b-7ab1-4885-a480-774f5d49efb1",
+              "name": "feedback_id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "8596fd39-2906-4ac3-a71a-10ebdf2ceb37",
+              "name": "customer_name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "1b95e586-bbb0-4449-bb20-86672090a444",
+              "name": "Feedback",
+              "value": "={{ $json.Feedback }}",
+              "type": "string"
+            },
+            {
+              "id": "057ca4f5-53aa-4661-ab29-7e1a795c82be",
+              "name": "analyzed_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "5cc20f88-cd4f-412a-993e-af15f61d7096",
+              "name": "sentiment_category",
+              "value": "={{ $json.sentimentAnalysis.category }}",
+              "type": "string"
+            },
+            {
+              "id": "5fec939b-5727-47f2-bd86-a40ed89f210f",
+              "name": "sentiment_strength",
+              "value": "={{ $json.sentimentAnalysis.strength }}",
+              "type": "number"
+            },
+            {
+              "id": "273c13ec-029b-4626-aafd-00679d85885f",
+              "name": "sentiment_confidence",
+              "value": "={{ $json.sentimentAnalysis.confidence }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        1008
+      ],
+      "id": "5ab0a7ee-ca3f-4801-a75e-a4c5f9641bd9",
+      "name": "Enrich: Timestamp + Scores1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        1168
+      ],
+      "id": "a6bc0bac-0dd5-4b2c-b268-08509bd95083",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================================================\n// Build Email Report — samkoBuilds branded\n// Paste into the \"Build Email Report\" Code node\n// Mode: \"Run Once for All Items\"\n// Works with V1 and V2 (issue_type column only shows if it exists)\n// =============================================================\n\n// ---- Brand tokens (samkoBuilds Brand Guidelines v1.0) ----\nconst C = {\n  core:    '#0D0D0F', // Charcoal Core – page background\n  c900:    '#17171B', // card surface\n  c800:    '#232328', // table header / alt rows\n  c500:    '#55555F', // borders\n  c300:    '#8C8C96', // muted text\n  paper:   '#F2EFE9', // main text\n  orange:  '#FF6B35', // Signal Orange – accent only\n  error:   '#E5484D', // URGENT badge\n  warning: '#F2B705', // Normal badge\n};\nconst SANS = \"Montserrat, 'Segoe UI', Arial, sans-serif\";\nconst MONO = \"'JetBrains Mono', Consolas, 'Courier New', monospace\";\n\n// ---- Get the rows (works after an Aggregate node OR directly after Filter) ----\nconst rows = $json.data ?? $input.all().map(i => i.json);\n\n// ---- Helpers ----\n// Escape text so customer comments can't break the HTML\nconst esc = (v) => String(v ?? '')\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')\n  .replace(/\"/g, '&quot;').trim();\n\nconst fmtTime = (iso) => {\n  try { return DateTime.fromISO(iso).setZone('Europe/Sofia').toFormat('dd.MM.yyyy HH:mm'); }\n  catch (e) { return esc(iso); }\n};\n\nconst badge = (text, color) =>\n  `<span style=\"display:inline-block;padding:3px 8px;border:1px solid ${color};border-radius:4px;color:${color};font-family:${MONO};font-size:11px;letter-spacing:1px;\">${esc(text).toUpperCase()}</span>`;\n\nconst hasIssue = rows.some(r => r.issue_type);\n\n// ---- Sort: urgent first, then strongest emotion ----\nrows.sort((a, b) =>\n  (Number(b.is_urgent) - Number(a.is_urgent)) ||\n  ((b.sentiment_strength ?? 0) - (a.sentiment_strength ?? 0)));\n\nconst total  = rows.length;\nconst urgent = rows.filter(r => r.is_urgent).length;\nconst runAt  = DateTime.now().setZone('Europe/Sofia').toFormat('dd.MM.yyyy HH:mm');\n\n// ---- Stat tile ----\nconst stat = (label, value, color) => `\n  <td width=\"50%\" style=\"padding:16px;background:${C.c900};border:1px solid ${C.c500};border-radius:6px;\">\n    <div style=\"font-family:${MONO};font-size:11px;letter-spacing:1.5px;color:${C.c300};\">${label}</div>\n    <div style=\"font-family:${SANS};font-size:28px;font-weight:700;color:${color};padding-top:4px;\">${value}</div>\n  </td>`;\n\n// ---- Table rows ----\nconst th = (t) => `<th align=\"left\" style=\"padding:10px 12px;font-family:${MONO};font-size:11px;letter-spacing:1px;font-weight:400;color:${C.c300};border-bottom:1px solid ${C.c500};\">${t}</th>`;\nconst td = (content, extra = '') => `<td valign=\"top\" style=\"padding:12px;border-bottom:1px solid ${C.c800};${extra}\">${content}</td>`;\n\nconst bodyRows = rows.map((r, i) => {\n  const urgentRow = !!r.is_urgent;\n  const bg = i % 2 ? C.c900 : C.core;\n  const leftBar = urgentRow ? `border-left:3px solid ${C.error};` : `border-left:3px solid transparent;`;\n  return `<tr style=\"background:${bg};\">\n    ${td(badge(r.priority ?? (urgentRow ? 'Urgent' : 'Normal'), urgentRow ? C.error : C.warning), leftBar)}\n    ${td(`<div style=\"font-family:${SANS};font-size:14px;font-weight:500;color:${C.paper};\">${esc(r.customer_name)}</div>\n          <div style=\"font-family:${MONO};font-size:11px;color:${C.c300};padding-top:2px;\">#${esc(r.feedback_id)} · ${fmtTime(r.analyzed_at)}</div>`)}\n    ${td(`<div style=\"font-family:${SANS};font-size:14px;font-weight:300;line-height:1.6;color:${C.paper};\">“${esc(r.Feedback)}”</div>\n          ${r.urgency_reason ? `<div style=\"font-family:${MONO};font-size:11px;color:${C.c300};padding-top:6px;\">→ ${esc(r.urgency_reason)}</div>` : ''}`)}\n    ${hasIssue ? td(`<span style=\"font-family:${MONO};font-size:12px;color:${r.issue_type === 'Critical issue' ? C.orange : C.c300};\">${esc(r.issue_type)}</span>`) : ''}\n    ${td(`<span style=\"font-family:${MONO};font-size:12px;color:${C.paper};\">${esc(r.sentiment_strength)}</span>`, 'text-align:center;')}\n    ${td(`<span style=\"font-family:${MONO};font-size:12px;color:${C.paper};\">${esc(r.sentiment_confidence)}</span>`, 'text-align:center;')}\n  </tr>`;\n}).join('');\n\n// ---- Full email ----\nconst html = `\n<div style=\"margin:0;padding:24px 0;background:${C.core};\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:760px;margin:0 auto;background:${C.core};font-family:${SANS};color:${C.paper};\">\n\n  <!-- Header: monogram + wordmark -->\n  <tr><td style=\"padding:24px 28px 20px 28px;border-bottom:1px solid ${C.c800};\">\n    <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\"><tr>\n      <td style=\"width:40px;height:40px;background:${C.c900};border-radius:6px;text-align:center;vertical-align:middle;font-family:${SANS};font-size:20px;font-weight:700;\">\n        <span style=\"color:${C.paper};\">s</span><span style=\"color:${C.orange};\">B</span>\n      </td>\n      <td style=\"padding-left:12px;font-family:${SANS};font-size:18px;font-weight:600;color:${C.paper};\">samkoBuilds</td>\n    </tr></table>\n  </td></tr>\n\n  <!-- Title -->\n  <tr><td style=\"padding:28px 28px 8px 28px;\">\n    <div style=\"font-family:${MONO};font-size:11px;letter-spacing:2px;color:${C.orange};\">FEEDBACK ANALYZER · RUN ${runAt}</div>\n    <div style=\"font-family:${SANS};font-size:26px;font-weight:700;line-height:1.15;color:${C.paper};padding-top:8px;\">Customer feedback that needs attention</div>\n    <div style=\"font-family:${SANS};font-size:15px;font-weight:300;line-height:1.6;color:${C.c300};padding-top:8px;\">\n      Every comment was scored for sentiment${hasIssue ? ' and checked for blocking issues (refunds, wrong or missing orders, payment problems)' : ''}. Urgent items are listed first.\n    </div>\n  </td></tr>\n\n  <!-- Stats -->\n  <tr><td style=\"padding:16px 28px;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"8\" style=\"border-collapse:separate;\"><tr>\n      ${stat('NEEDS ATTENTION', total, C.paper)}\n      ${stat('URGENT', urgent, urgent ? C.error : C.paper)}\n    </tr></table>\n  </td></tr>\n\n  <!-- Table -->\n  <tr><td style=\"padding:8px 28px 24px 28px;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid ${C.c800};border-collapse:collapse;\">\n      <tr style=\"background:${C.c800};\">\n        ${th('PRIORITY')}${th('CUSTOMER')}${th('FEEDBACK')}${hasIssue ? th('ISSUE') : ''}${th('STRENGTH')}${th('CONF.')}\n      </tr>\n      ${bodyRows || `<tr><td colspan=\"6\" style=\"padding:20px;font-family:${SANS};font-weight:300;color:${C.c300};\">No negative feedback in this run.</td></tr>`}\n    </table>\n  </td></tr>\n\n  <!-- Footer -->\n  <tr><td style=\"padding:20px 28px;border-top:1px solid ${C.c800};font-family:${MONO};font-size:11px;color:${C.c300};line-height:1.6;\">\n    Generated automatically by an n8n workflow · Sentiment by LLM (Large Language Model), so scores are estimates — check before acting.<br>\n    <a href=\"https://samkobuilds.com\" style=\"color:${C.orange};text-decoration:none;\">samkobuilds.com</a> · Building the skills to build with AI.\n  </td></tr>\n\n</table>\n</div>`;\n\nreturn [{\n  json: {\n    subject: urgent\n      ? `[samkoBuilds] ${urgent} urgent / ${total} feedback items need attention`\n      : `[samkoBuilds] ${total} feedback items need attention`,\n    html,\n    total_items: total,\n    urgent_count: urgent,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        1168
+      ],
+      "id": "8be08424-78b7-441c-b615-29c0a14919c8",
+      "name": "Build Email Report1"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2688,
+        1168
+      ],
+      "id": "5f151334-8683-4401-9f19-2006b5716295",
+      "name": "Send Email (Gmail)1",
+      "webhookId": "e8afc88c-9820-4cd9-9c91-d886565aee4a"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        992
+      ],
+      "id": "63ba93aa-fa96-44ed-af16-3d74cf8b79ed",
+      "name": "Merge Sentiment Branches"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        1008
+      ],
+      "id": "82d31d78-eb27-40aa-a0cb-db9156dbe38e",
+      "name": "Merge Issue Branches"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1232
+      ],
+      "id": "e7a29e19-b6bf-4e60-aedc-bc99df40f91f",
+      "name": "OpenRouter Chat Model (Classifier)1"
+    }
+  ],
+  "connections": {
+    "Get Feedback (Data Table)": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich: Timestamp + Scores": {
+      "main": [
+        [
+          {
+            "node": "Filter: Negative Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Negative Only": {
+      "main": [
+        [
+          {
+            "node": "Flag Urgent (Strength + Confidence)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag Urgent (Strength + Confidence)": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Report": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Build Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Enrich: Timestamp + Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Feedback (Data Table)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Classifier": {
+      "main": [
+        [
+          {
+            "node": "Tag: Critical issue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: Complaint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: No issue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: No issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (Classifier)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Issue Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag: Critical issue": {
+      "main": [
+        [
+          {
+            "node": "Merge Issue Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag: Complaint": {
+      "main": [
+        [
+          {
+            "node": "Merge Issue Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tag: No issue": {
+      "main": [
+        [
+          {
+            "node": "Merge Issue Branches",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Calculate Urgency": {
+      "main": [
+        [
+          {
+            "node": "Filter: Negative OR Critical",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Negative OR Critical": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Feedback (Data Table)1": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis2": {
+      "main": [
+        [
+          {
+            "node": "Merge Sentiment Branches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Sentiment Branches",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge Sentiment Branches",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Enrich: Timestamp + Scores1": {
+      "main": [
+        [
+          {
+            "node": "Issue Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Build Email Report1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Report1": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Gmail)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Sentiment Branches": {
+      "main": [
+        [
+          {
+            "node": "Enrich: Timestamp + Scores1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Issue Branches": {
+      "main": [
+        [
+          {
+            "node": "Calculate Urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (Classifier)1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

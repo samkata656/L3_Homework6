@@ -1,0 +1,351 @@
+{
+  "name": "L3_H6 send_code",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "employee_email"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        16
+      ],
+      "name": "When Executed by Another Workflow",
+      "id": "317ef33b-fc37-4056-ad22-e5b341177e7b"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tvTZAiPwNOK43h3K",
+          "mode": "list",
+          "cachedResultName": "employees"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.employee_email.toLowerCase() }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -336,
+        16
+      ],
+      "name": "Is employee?",
+      "alwaysOutputData": true,
+      "id": "2f679525-73b6-487f-abc7-c335c8acb502"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -128,
+        16
+      ],
+      "name": "Registered?",
+      "id": "c6e053c9-4747-4578-8905-0dd543298ba6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "code",
+              "value": "={{ String(Math.floor(100000 + Math.random() * 900000)) }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "expires_at",
+              "value": "={{ $now.plus(10, 'minutes').toUTC().toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -96
+      ],
+      "name": "Generate code",
+      "id": "f99398ff-d6b4-44ca-9710-75f05e6c5193"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "M1xMXh5cBf3dXCKi",
+          "mode": "list",
+          "cachedResultName": "chat_codes"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "code",
+              "displayName": "code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "expires_at",
+              "displayName": "expires_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -96
+      ],
+      "name": "Save code",
+      "id": "a4a8fd1d-add5-4900-89e0-7c9901fea8f6"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Generate code').item.json.email }}",
+        "subject": "=Your expense assistant code: {{ $('Generate code').item.json.code }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\"><tr><td align=\"center\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:480px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\"><tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\"><span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span><span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span><span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">EXPENSE ASSISTANT</span></td></tr><tr><td style=\"padding:28px;\"><h1 style=\"margin:0 0 8px;font-size:20px;font-weight:700;color:#F2EFE9;\">Your verification code</h1><p style=\"margin:0 0 20px;font-size:15px;font-weight:300;line-height:1.6;color:#F2EFE9;\">Type this code in the expense chat to see your expenses.</p><div style=\"background:#232328;border-radius:8px;padding:18px;text-align:center;font-family:'JetBrains Mono',Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#FF6B35;\">{{ $('Generate code').item.json.code }}</div><p style=\"margin:16px 0 0;font-size:13px;color:#8C8C96;line-height:1.5;\">Valid for 10 minutes. If you didn't ask for this code, you can ignore this email.</p></td></tr></table></td></tr></table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -96
+      ],
+      "name": "Email code",
+      "id": "7fefe4e0-607a-4568-8d7b-59f8237d1b57",
+      "webhookId": "ce6bec3d-1717-4b26-bde7-512660dc311d"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "result",
+              "value": "A 6-digit code was sent to the employee's email. It is valid for 10 minutes. Ask the employee to type it in the chat.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        -96
+      ],
+      "name": "Result: sent",
+      "id": "360a0700-6e84-46e4-ae5d-63d3892fb6b3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r2",
+              "name": "result",
+              "value": "This email is not registered as an employee. No code was sent.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        128
+      ],
+      "name": "Result: not registered",
+      "id": "f8070a39-0bc3-411b-9595-b94f73b3390d"
+    },
+    {
+      "parameters": {
+        "content": "- Is employee? + Registered? only send codes to emails in your employees table. Otherwise anyone could use your chat to spam random addresses with emails from your account.\n- Generate code creates a random 6-digit code, valid for 10 minutes.\n- Save code uses upsert: if this email already has a code, it’s replaced, otherwise a new row is added. So each person has only one valid code at a time.\n- Email code sends a branded email with the code shown large in orange.\n- Result nodes return a clear sentence for the agent. Without them, the agent would receive Gmail’s technical response and have to guess what happened.",
+        "height": 272,
+        "width": 544
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -320
+      ],
+      "id": "72b2aecb-6260-4a7b-ae3a-027386b04162",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Is employee?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is employee?": {
+      "main": [
+        [
+          {
+            "node": "Registered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registered?": {
+      "main": [
+        [
+          {
+            "node": "Generate code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Result: not registered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate code": {
+      "main": [
+        [
+          {
+            "node": "Save code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save code": {
+      "main": [
+        [
+          {
+            "node": "Email code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email code": {
+      "main": [
+        [
+          {
+            "node": "Result: sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

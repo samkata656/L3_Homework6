@@ -1,0 +1,715 @@
+{
+  "name": "L3/H5",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Support ticket",
+        "formDescription": "This ticket will be processed semi-automatically",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name:",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email:",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Problem:",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0fd61680-ef92-431e-8250-cd2802e300f1",
+      "name": "On form submission",
+      "webhookId": "0effb02a-6f09-4a27-81c0-becb44ffc506"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json[\"Problem:\"] }}",
+        "options": {
+          "categories": "Critical, Negative, Neutral, Positive",
+          "systemPromptTemplate": "You are a support ticket triage assistant. Your job is to read a support request from an employee or customer and decide how URGENT it is, based on the tone and the impact described.\n\nCategorize the text into exactly one of these categories: {categories}\n\nCategory definitions:\n- Critical: Work or business is stopped or seriously blocked, data is lost, money is at risk, there is a deadline today or tomorrow, or the writer threatens legal action or cancellation. Strong words like \"urgent\", \"immediately\", \"disaster\" usually point here.\n- Negative: The writer is unhappy, frustrated or disappointed, but nothing is completely stopped and there is no emergency. Examples: a bug that is annoying, a wrong charge, no reply to earlier messages.\n- Neutral: A normal request or question with no strong emotion. Examples: asking for an invoice, a price quote, changing an address, a technical question.\n- Positive: The writer is happy, gives praise or thanks, or shows interest in buying or upgrading.\n\nRules:\n- Judge urgency by IMPACT first, tone second. A calm message describing lost data is still Critical.\n- If a message mixes praise with a complaint, choose the category of the complaint.\n- If you are unsure between two categories, choose the more urgent one so a human checks it.\n- Ignore names, emails and greetings; focus only on the problem.\n\nUse the provided formatting instructions. Only output the JSON.",
+          "includeDetailedResults": true,
+          "enableAutoFixing": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        -32
+      ],
+      "id": "a0d32065-1124-4333-a205-f5542143f99c",
+      "name": "Sentiment Analysis"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json[\"Problem:\"] }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Sales",
+              "description": "Questions about buying, prices, quotes, upgrading or downgrading plans, adding users or licenses, discounts or offers promised by a sales person, and interest in new products."
+            },
+            {
+              "category": "Technical",
+              "description": "Something in the product does not work or the writer needs technical help: errors, login or password problems, bugs, broken features, missing or lost data, problems after updates, integrations and API questions."
+            },
+            {
+              "category": "Billing",
+              "description": "Money that was already charged or needs to be paid: double charges, refunds, invoices and receipts, payment confirmations, VAT details, and accounts suspended because of payment."
+            },
+            {
+              "category": "General",
+              "description": "Anything that does not fit the other three: changing company or contact details, feedback and compliments, complaints about communication or response times, and general questions about the company."
+            }
+          ]
+        },
+        "options": {
+          "multiClass": false,
+          "fallback": "discard",
+          "systemPromptTemplate": "You are a support ticket router. Read the support request and assign it to exactly one department from this list: {categories}\n\nRules:\n- Decide based on the MAIN problem the writer needs solved, not on words mentioned in passing.\n- If the problem is about money already charged, refunds, invoices or payments, choose Billing, even if a technical issue is also mentioned.\n- If the problem is about a price, offer or discount that was promised before buying, choose Sales.\n- If something in the product is broken or not working, choose Technical, even if the writer also complains about paying for it.\n- If no other department clearly fits, choose General.\n- Ignore names, greetings and the tone of the message; only the topic matters here.\n\nUse the provided formatting instructions below. Don't explain, and only output the JSON.",
+          "enableAutoFixing": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        -32
+      ],
+      "id": "8e6b22d4-eea0-4379-ac8b-b91264f3bbbd",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        288,
+        208
+      ],
+      "id": "7ce84d5e-fe0d-45a4-bfac-912470054cc5",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        784,
+        208
+      ],
+      "id": "ee2af858-0cdb-4bac-a3a2-aa78da2caa38",
+      "name": "Anthropic Chat Model1"
+    },
+    {
+      "parameters": {
+        "content": "1\tMaria Petrova\tNobody on our team can log in since this morning, we get “Server error 500”. All work is stopped, please fix this immediately!\tTechnical / Critical\n2\tJohn Carter\tI was charged 49 EUR twice for the same subscription this month. Please refund the duplicate payment.\tBilling / Negative\n3\tElena Dimitrova\tWe love the product and want to upgrade to the Enterprise plan for 60 users. Can someone from sales contact me?\tSales / Positive\n4\tPeter Ivanov\tOur office moved to 15 Vitosha Blvd, Sofia. Please update the address in our account.\tGeneral / Neutral\n5\tSophie Müller\tI’ve tried to reset my password 4 times and the email never arrives. Very frustrating.\tTechnical / Negative\n6\tGeorgi Kolev\tCould you send me a copy of the September invoice with our VAT number?\tBilling / Neutral\n7\tLaura Bennett\tPlease send me a price quote for 25 licenses on an annual plan.\tSales / Neutral\n8\tDavid Rossi\tAfter last night’s update ALL our customer data is gone! We need it restored today or we take legal action.\tTechnical / Critical\n9\tTom Walker\tYour sales rep promised us 20% off for a yearly plan, but the offer shows full price. Not what we agreed.\tSales or Billing / Negative ⚠️\n10\tMark Johnson\tI like the app, but CSV export has been broken for 2 weeks and I’m still paying for Pro because of that feature.\tTechnical or Billing / Negative ⚠️",
+        "height": 288,
+        "width": 976
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -512
+      ],
+      "id": "a76693cf-244a-4f86-874f-2bfa6e02f483",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7fb5de69-0857-476e-9fa3-31e0de1f0c25",
+              "name": "Name",
+              "value": "={{ $json[\"Name:\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "eb9322de-0ff4-451c-877b-8c4b31bc7920",
+              "name": "Problem",
+              "value": "={{ $json[\"Problem:\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "7e8ec84b-d7c4-4425-b6b3-8c38d8aaffd9",
+              "name": "submittedAt",
+              "value": "={{ $json.submittedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "cfb2468e-250e-4fec-818f-788a8c0eba07",
+              "name": "Department",
+              "value": "={{ ['Sales', 'Technical', 'Billing', 'General'][$prevNode.outputIndex] }}",
+              "type": "string"
+            },
+            {
+              "id": "e7654abb-ed9b-4f00-9275-a6fa22c9c526",
+              "name": "ai_sentiment",
+              "value": "={{ $json.sentimentAnalysis.category }}",
+              "type": "string"
+            },
+            {
+              "id": "ae25cac8-d2f0-4792-a637-bcd8e706a55a",
+              "name": "email",
+              "value": "={{ $json[\"Email:\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        -16
+      ],
+      "id": "24bf1446-2b49-4376-8275-0636dd64d075",
+      "name": "Ticket Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "540720d3-7a9e-4c95-8c43-70b6e58832f9",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1728,
+        -16
+      ],
+      "id": "766bfa9a-32bc-4b06-ab22-eb1af57f98bf",
+      "name": "Approved?"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "message": "=🎫 New support ticket\n\n👤 Client: {{ $json.Name }}\n📧 Email: {{ $json.email }}\n🏢 Department: {{ $json.Department }}\n🤖 AI sentiment: {{ $json.ai_sentiment }}\n\n📝 Problem:\n{{ $json.Problem }}\n\nIs the AI sentiment correct?",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "✅ Correct",
+            "disapproveLabel": "❌ Change"
+          }
+        },
+        "chatApproval": true,
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        -16
+      ],
+      "id": "e6223d19-12e5-48e9-82cd-e8ab1d23b67b",
+      "name": "Is sentiment correct?",
+      "webhookId": "7688ce00-be31-4063-bf99-538af447459b"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "message": "=Choose the correct sentiment for {{ $('Ticket Data').item.json.Name }}'s ticket:",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sentiment",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Critical"
+                  },
+                  {
+                    "option": "Neutral"
+                  },
+                  {
+                    "option": "Negative"
+                  },
+                  {
+                    "option": "Positive"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2032,
+        80
+      ],
+      "id": "697c7778-2396-40c5-a906-3d812124b442",
+      "name": "Change sentiment",
+      "webhookId": "72512db4-2c58-4ba4-b0b3-b9bcce86a843"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "504e5267-22f9-41f2-9c7e-7fc5852cc838",
+              "name": "Name",
+              "value": "={{ $('Ticket Data').item.json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "db4c7fcc-dd20-448a-b188-e42440946f4a",
+              "name": "email",
+              "value": "={{ $('Ticket Data').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "00c58bb2-0e34-4f66-a482-bef5de24e3bb",
+              "name": "Problem",
+              "value": "={{ $('Ticket Data').item.json.Problem }}",
+              "type": "string"
+            },
+            {
+              "id": "7dadba3f-6a1c-41c7-8afa-b9db70b0968f",
+              "name": "submittedAt",
+              "value": "={{ $('Ticket Data').item.json.submittedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "2764d748-e0f0-4ca9-b576-022e02b8a248",
+              "name": "Department",
+              "value": "={{ $('Ticket Data').item.json.Department }}",
+              "type": "string"
+            },
+            {
+              "id": "253a1eb8-4976-4469-922a-976a775ec076",
+              "name": "Sentiment",
+              "value": "={{ $json.data?.Sentiment ?? $('Ticket Data').item.json.ai_sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "8fc24ef5-2006-4343-bcf0-e7a48d149600",
+              "name": "sentiment_changed_by_human",
+              "value": "={{ $json.data?.Sentiment != null }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2336,
+        -32
+      ],
+      "id": "b0b3ddef-6710-4d63-9284-7bcf814fb9f6",
+      "name": "Final Ticket"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=New support ticket to process:\n\nCustomer name: {{ $json.Name }}\nDepartment: {{ $json.Department }}\nSentiment (urgency): {{ $json.Sentiment }}\nSubmitted at: {{ $json.submittedAt }}\n\nProblem:\n{{ $json.Problem }}",
+        "options": {
+          "systemMessage": "You are a friendly and professional customer support agent for a software company.\n\nFor every ticket you receive, do these steps in this exact order:\n1. Write a helpful reply to the customer (the \"proposed answer\"):\n   - Address the customer by first name.\n   - Acknowledge the problem in one sentence.\n   - Give clear next steps or a solution. If you don't know the exact fix, say what the support team will do and when.\n   - Match the urgency: for Critical tickets, apologise, say the issue is being escalated as top priority and promise an update within 2 hours. For Positive tickets, thank them warmly.\n   - Never promise refunds, discounts or specific dates you cannot be sure of; say the responsible team will confirm.\n   - Keep it under 120 words. Reply in the same language as the ticket.\n2. Use the \"Save to Google Sheet\" tool to save the ticket, including your proposed answer.\n3. Use the \"Create Google Task\" tool to create a follow-up task for the support team.\n4. Finally, output only the proposed answer.\n\nAlways use both tools exactly once per ticket."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2560,
+        -32
+      ],
+      "id": "2e310c4b-f680-4529-8620-28675da37ae8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        2528,
+        144
+      ],
+      "id": "861e1d09-70d7-4be8-a8a3-f3be2f539234",
+      "name": "Anthropic Chat Model2"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Saves a processed support ticket as a new row in the support log spreadsheet.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "L3/H5 tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Processing Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Ticket Text": "={{ $('Final Ticket').item.json.Problem }}",
+            "Sentiment": "={{ $('Final Ticket').item.json.Sentiment }}",
+            "Department": "={{ $('Final Ticket').item.json.Department }}",
+            "Ai proposed answer": "={{ $fromAI('proposed_answer', 'The full reply you wrote to the customer', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Processing Date",
+              "displayName": "Processing Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ticket Text",
+              "displayName": "Ticket Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ai proposed answer",
+              "displayName": "Ai proposed answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        2656,
+        240
+      ],
+      "id": "d5fa67ac-9974-497e-b673-1b8db089ed8d",
+      "name": "Save to Google Sheet"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Creates a follow-up task for the support team about a ticket.",
+        "task": "YOUR_TASK_LIST_ID",
+        "title": "={{ $fromAI('title', 'Short summary of the ticket, max 8 words, starting with the department in brackets, e.g. [Technical] CSV export returns empty file', 'string') }}",
+        "additionalFields": {
+          "notes": "={{ $fromAI('notes', '2-3 short sentences: customer name, sentiment/urgency, what the problem is and what the team should do next', 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasksTool",
+      "typeVersion": 1,
+      "position": [
+        2832,
+        240
+      ],
+      "id": "d6bb98e2-95a0-4232-a0dd-94a6ab4531cd",
+      "name": "Create Google Task"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Data": {
+      "main": [
+        [
+          {
+            "node": "Is sentiment correct?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is sentiment correct?": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Change sentiment": {
+      "main": [
+        [
+          {
+            "node": "Final Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Ticket": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Final Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Change sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

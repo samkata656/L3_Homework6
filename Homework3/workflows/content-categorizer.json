@@ -1,0 +1,588 @@
+{
+  "name": "L3/H3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        192
+      ],
+      "id": "c49d47a7-24b4-437b-9e08-2237f01da1f3",
+      "name": "Webhook",
+      "webhookId": "b642b181-7d11-4f8e-8325-45fa8f3e0d8f"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -144
+      ],
+      "id": "8265e058-d824-46c8-94e5-63bce807178f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-N8N-INSTANCE/webhook/articles",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"articles\": [\n    { \"id\": 1, \"title\": \"New AI chip launched\", \"text\": \"Nvidia announced a new GPU aimed at data centers...\" },\n    { \"id\": 2, \"title\": \"Markets rally\", \"text\": \"Stocks rose sharply after the central bank held rates...\" },\n    { \"id\": 3, \"title\": \"Sleep and memory\", \"text\": \"A new study links deep sleep to better memory retention...\" },\n    { \"id\": 4, \"title\": \"Final score\", \"text\": \"Real Madrid won 3-1 in a dramatic Champions League night...\" },\n    { \"id\": 5, \"title\": \"Box office hit\", \"text\": \"The new sci-fi film topped the weekend box office...\" },\n    { \"id\": 6, \"title\": \"WIN FREE MONEY\", \"text\": \"Click here to claim your $1000 prize now!!!\" },\n    { \"id\": 7, \"title\": \"Cheap pills online\", \"text\": \"Buy now, no prescription needed, limited offer!!!\" }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        -144
+      ],
+      "id": "c16b975c-bb1c-4fa5-9483-ff48c988f789",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        192
+      ],
+      "id": "0ee9c4ef-da08-4ab3-9919-b9cb2a8e2481",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.title }} {{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Technology",
+              "description": "tech, AI, software, hardware, gadgets"
+            },
+            {
+              "category": "Business",
+              "description": "companies, markets, finance, economy"
+            },
+            {
+              "category": "Health",
+              "description": "medicine, fitness, nutrition, health research"
+            },
+            {
+              "category": "Entertainment",
+              "description": "movies, music, TV, celebrities"
+            },
+            {
+              "category": "Sports",
+              "description": "matches, athletes, tournaments"
+            }
+          ]
+        },
+        "options": {
+          "multiClass": false,
+          "fallback": "other",
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json. Only real news articles belong to a category. Spam, ads, scams, prize offers or meaningless text do not fit any category."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        128
+      ],
+      "id": "9a0ec6ba-2b88-46bb-a551-dd2320a4baf5",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        704,
+        496
+      ],
+      "id": "e8ec5c2a-5b63-45ef-b98b-aae05a28b743",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Technology",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        -336
+      ],
+      "id": "799e0138-38ac-472b-a758-3f81ed62be53",
+      "name": "Set Technology"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Business",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        -176
+      ],
+      "id": "bb3896a0-ae6d-4b17-b3a5-609c2f3a62b3",
+      "name": "Set Business"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Entertainment",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        144
+      ],
+      "id": "dae01007-df6a-4031-b0db-3483474de42c",
+      "name": "Set Entertainment"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Sports",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        320
+      ],
+      "id": "80ae2766-1ae5-4091-87b0-e29dfeadedfd",
+      "name": "Set Sports"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        112
+      ],
+      "id": "74adf4b3-2310-44df-b0eb-dfde187c6e43",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "category",
+        "options": {
+          "outputFormat": "singleItem"
+        }
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        176
+      ],
+      "id": "41e976d6-0736-4537-acdb-b16ed736d038",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.data.length }} uncategorised submission(s):\n{{ $json.data.map(a => '• ' + a.title + ' | ' + a.text).join('\\n') }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        400
+      ],
+      "id": "5a2e8d2c-9fbf-4c24-8ef9-cf8265341518",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Health",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        -16
+      ],
+      "id": "808ee93b-a1c6-4572-b070-3c12ffa9c145",
+      "name": "Set Health"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1872,
+        400
+      ],
+      "id": "1490dce4-dfd9-47cb-b3a0-19a0a2659fe7",
+      "name": "wait for summary"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e03d53b-3955-4b18-9f77-801a16da9ce3",
+              "name": "category",
+              "value": "Other",
+              "type": "string"
+            },
+            {
+              "id": "c47f1fc7-d4f7-4b7e-b785-99ad652d60f7",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        480
+      ],
+      "id": "db4585b5-98bc-43ab-b6d9-e58c3de21164",
+      "name": "Set Other"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        480
+      ],
+      "id": "339df53c-af43-401c-acde-82c943dc708c",
+      "name": "Aggregate"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Set Technology",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Business",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Health",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Entertainment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Sports",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Technology": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Business": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Set Entertainment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Set Sports": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Health": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "wait for summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait for summary": {
+      "main": [
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Other": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "wait for summary",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

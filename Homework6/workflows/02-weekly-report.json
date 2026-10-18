@@ -1,0 +1,333 @@
+{
+  "name": "L3/H6 Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -272,
+        16
+      ],
+      "id": "2eb81ff8-e9b9-4b83-9260-70f463bdc231",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Df2zyf90qr8zIrED",
+          "mode": "list",
+          "cachedResultName": "expenses"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "createdAt",
+              "condition": "gte",
+              "keyValue": "={{ $now.minus(7, 'days').toUTC().toISO() }}"
+            },
+            {
+              "keyName": "createdAt",
+              "condition": "lt",
+              "keyValue": "={{ $now.toUTC().toISO() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "854e8e36-00cb-41a2-baa4-177f44609f14",
+      "name": "TEST",
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Df2zyf90qr8zIrED",
+          "mode": "list",
+          "cachedResultName": "expenses"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "createdAt",
+              "condition": "gte",
+              "keyValue": "={{ $now.minus(1, 'week').startOf('week').toUTC().toISO() }}"
+            },
+            {
+              "keyName": "createdAt",
+              "condition": "lt",
+              "keyValue": "={{ $now.startOf('week').toUTC().toISO() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        -144
+      ],
+      "id": "28ec98ca-64a1-4a1d-baac-0a549d872cb5",
+      "name": "Get expenses",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "**Get expenses** взима данните от миналата седмица. TEST взима данните от последните седем дни \n",
+        "height": 112
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        16
+      ],
+      "id": "50b8291f-8de3-4734-a138-6fe94b029363",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id"
+            },
+            {
+              "aggregation": "sum",
+              "field": "total_eur"
+            },
+            {
+              "aggregation": "sum",
+              "field": "approved_amount_eur"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "department, category",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "a28beb63-6d22-4aae-a9ea-27969b1fc7af",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        816,
+        192
+      ],
+      "id": "26b02da1-1308-405b-9b4e-f75c1ebaa054",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Last week's company expenses, grouped by department and category. All amounts are in EUR.\ncount_id = number of receipts, sum_total_eur = amount spent, sum_approved_amount_eur = amount reimbursed.\n\n{{ JSON.stringify($input.all().map(i => i.json)) }}\n\nWrite a short summary for the finance team in 3–5 sentences:\n- total spent vs total reimbursed\n- which department and category spent the most\n- any rejected or reduced expenses (where reimbursed is less than spent)\n- anything unusual\n\nPlain text only. No greeting, no markdown, no bullet symbols. Use ONLY the numbers given, never invent figures.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        816,
+        0
+      ],
+      "id": "48e62d1c-f528-488e-ab90-d01894a77580",
+      "name": "Write summary",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "sendTo": "finance@example.com",
+        "subject": "=Weekly expense report: {{ $now.minus(1,'week').startOf('week').toFormat('dd.MM') }} – {{ $now.minus(1,'week').endOf('week').toFormat('dd.MM.yyyy') }} (no expenses)",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\"> <tr><td align=\"center\"> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:640px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\"> <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\"> <span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span> <span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span> <span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">WEEKLY REPORT</span> </td></tr> <tr><td style=\"padding:28px;\"> <div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#8C8C96;\">{{ $now.minus(1,'week').startOf('week').toFormat('dd.MM') }} – {{ $now.minus(1,'week').endOf('week').toFormat('dd.MM.yyyy') }}</div> <h1 style=\"margin:8px 0 12px;font-size:22px;font-weight:700;color:#F2EFE9;\">No expenses last week</h1> <p style=\"margin:0;font-size:15px;font-weight:300;line-height:1.6;color:#F2EFE9;\">No expense receipts were submitted during this period, so there is nothing to review or reimburse.</p> </td></tr> <tr><td style=\"padding:16px 28px;border-top:1px solid #2E2E35;font-size:12px;color:#8C8C96;\">Sent automatically every Monday by the samkoBuilds Expense Receipt Assistant.</td></tr> </table> </td></tr> </table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        160
+      ],
+      "id": "bd114a20-b6c6-4557-8798-15fadbd5c53d",
+      "name": "Send no expenses",
+      "webhookId": "0178c5ce-713b-42d9-a459-cb545f99a1f9"
+    },
+    {
+      "parameters": {
+        "sendTo": "finance@example.com",
+        "subject": "=Weekly expense report: {{ $now.minus(1,'week').startOf('week').toFormat('dd.MM') }} – {{ $now.minus(1,'week').endOf('week').toFormat('dd.MM.yyyy') }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\"> <tr><td align=\"center\"> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:640px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\"> <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\"> <span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span> <span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span> <span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">WEEKLY REPORT</span> </td></tr> <tr><td style=\"padding:28px;\"> <div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#8C8C96;\">{{ $now.minus(1,'week').startOf('week').toFormat('dd.MM') }} – {{ $now.minus(1,'week').endOf('week').toFormat('dd.MM.yyyy') }}</div> <h1 style=\"margin:8px 0 20px;font-size:22px;font-weight:700;color:#F2EFE9;\">Expenses last week</h1> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 20px;\"><tr> <td width=\"33%\" style=\"background:#232328;border-radius:8px;padding:14px;\"><div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:10px;color:#8C8C96;\">RECEIPTS</div><div style=\"font-size:22px;font-weight:700;color:#F2EFE9;\">{{ $('Summarize').all().reduce((s, i) => s + i.json.count_id, 0) }}</div></td> <td width=\"4\"></td> <td width=\"33%\" style=\"background:#232328;border-radius:8px;padding:14px;\"><div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:10px;color:#8C8C96;\">SPENT</div><div style=\"font-size:22px;font-weight:700;color:#F2EFE9;\">{{ $('Summarize').all().reduce((s, i) => s + i.json.sum_total_eur, 0).toFixed(2) }} €</div></td> <td width=\"4\"></td> <td width=\"33%\" style=\"background:#232328;border-radius:8px;padding:14px;\"><div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:10px;color:#8C8C96;\">REIMBURSED</div><div style=\"font-size:22px;font-weight:700;color:#FF6B35;\">{{ $('Summarize').all().reduce((s, i) => s + i.json.sum_approved_amount_eur, 0).toFixed(2) }} €</div></td> </tr></table> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border-left:3px solid #FF6B35;border-radius:6px;margin:0 0 20px;\"> <tr><td style=\"padding:14px 16px;\"><div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;color:#8C8C96;margin-bottom:6px;\">SUMMARY</div><div style=\"font-size:14px;font-weight:300;color:#F2EFE9;line-height:1.6;\">{{ $json.text.replace(/\\n/g, '<br>') }}</div></td></tr> </table> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid #2E2E35;border-radius:8px;font-size:13px;color:#F2EFE9;\"> <tr style=\"background:#232328;font-family:'JetBrains Mono',Consolas,monospace;font-size:10px;color:#8C8C96;\"><td style=\"padding:10px 12px;\">DEPARTMENT</td><td style=\"padding:10px 12px;\">CATEGORY</td><td style=\"padding:10px 12px;text-align:right;\">RECEIPTS</td><td style=\"padding:10px 12px;text-align:right;\">SPENT €</td><td style=\"padding:10px 12px;text-align:right;\">REIMBURSED €</td></tr> {{ $('Summarize').all().map(i => `<tr><td style=\"padding:10px 12px;border-top:1px solid #2E2E35;\">${i.json.department}</td><td style=\"padding:10px 12px;border-top:1px solid #2E2E35;\">${i.json.category}</td><td style=\"padding:10px 12px;border-top:1px solid #2E2E35;text-align:right;\">${i.json.count_id}</td><td style=\"padding:10px 12px;border-top:1px solid #2E2E35;text-align:right;\">${i.json.sum_total_eur.toFixed(2)}</td><td style=\"padding:10px 12px;border-top:1px solid #2E2E35;text-align:right;\">${i.json.sum_approved_amount_eur.toFixed(2)}</td></tr>`).join('') }} </table> </td></tr> <tr><td style=\"padding:16px 28px;border-top:1px solid #2E2E35;font-size:12px;color:#8C8C96;\">Sent automatically every Monday by the samkoBuilds Expense Receipt Assistant.</td></tr> </table> </td></tr> </table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "a3e6b113-c7fc-480a-97d6-a570fc1d23cd",
+      "name": "send expenses",
+      "webhookId": "b6333917-737f-4281-8fd7-957e84afa781"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "5179baa6-901b-40dc-a251-d4b47f6693ed",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        272,
+        16
+      ],
+      "id": "307c148e-32eb-48a5-8806-b477385d6ac9",
+      "name": "Any expense?"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get expenses": {
+      "main": [
+        [
+          {
+            "node": "Any expense?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Write summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write summary": {
+      "main": [
+        [
+          {
+            "node": "send expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any expense?": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send no expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Sofia"
+  },
+  "pinData": {}
+}

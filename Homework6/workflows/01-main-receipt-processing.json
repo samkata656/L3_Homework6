@@ -1,0 +1,1194 @@
+{
+  "name": "L3/H6 Main",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## gmail\nUse a dedicated receipts address. Gmail ignores anything after a +, so yourgmail+receipts@gmail.com lands in your normal inbox, but the trigger can tell it apart",
+        "height": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -304
+      ],
+      "id": "2b39b74b-2684-4732-8224-71c580a06f87",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "to:receipts@example.com has:attachment filename:(jpg OR jpeg OR png)",
+          "readStatus": "unread"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -32,
+        -96
+      ],
+      "name": "Gmail Trigger",
+      "id": "1978708c-fa30-4465-b0b6-682d3b708639"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read the attached image and extract the receipt data.\n\nThe employee's email (use it ONLY for business_purpose):\nSubject: {{ $json.subject }}\nBody: {{ $json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "=SystemMessagePromptTemplate",
+              "message": "You extract data from expense receipt photos for a company in Bulgaria. Receipts can come from any country and be in any language (Bulgarian, English, Romanian, Greek, German, etc.).\n\nRULES:\n1. is_receipt: true only if the image is a real purchase receipt/invoice with a clear final total. Flyers, posters, screenshots, random photos, or receipts with no readable total -> false.\n2. If is_receipt is false: set all other fields to null and explain briefly in 'reason'.\n3. merchant: the business name as printed at the top.\n4. receipt_number: the receipt/bon number (e.g. after 'Бон №', 'Bon nr.', 'No', 'Nr.'). null if missing.\n5. date: the date the receipt was ISSUED, in YYYY-MM-DD format. European receipts use DD.MM.YYYY or DD/MM/YYYY; US receipts use MM/DD/YYYY. For hotels, use the issue/payment date, NOT the stay dates.\n6. total: the FINAL total to pay as a number (e.g. 'ОБЩА СУМА', 'TOTAL', 'TOTAL DE PLATĂ', 'Summe', 'ΣΥΝΟΛΟ'). NOT the VAT line, NOT the cash handed over, NOT the change ('Ресто', 'Rest').\n7. currency: ALWAYS the official 3-letter ISO 4217 code, never a symbol or local word. Examples:\n   'лв', 'лв.', 'BGN' -> BGN\n   'EUR', '€' -> EUR\n   'lei', 'LEI', 'RON' -> RON\n   '$', 'USD' -> USD\n   '£', 'GBP' -> GBP\n   'zł', 'PLN' -> PLN\n   'Kč', 'CZK' -> CZK\n   'Ft', 'HUF' -> HUF\n   'TL', '₺', 'TRY' -> TRY\n   'RSD', 'дин.' -> RSD\n   'CHF' -> CHF\n   If no currency is printed, infer it from the country of the merchant's address. If you truly cannot tell, return null.\n8. category: exactly one of:\n   Travel = hotels, transport, fuel, parking\n   Food = cafés, restaurants, meals\n   Office = office supplies, small equipment\n   Software = subscriptions, licences\n   Entertainment = team events, bowling, cinema, leisure\n   Other = anything else\n9. reason: one short sentence describing what you saw.\n10. business_purpose: the BUSINESS REASON for the expense, taken ONLY from the employee's email subject/body.\n   A valid purpose says WHY or WITH WHOM, e.g. \"lunch with client Ivanov\", \"coffee meeting with Acme team\", \"hotel for sales conference in Borovets\".\n   NOT valid (return null): just naming what was bought (\"coffee\", \"lunch\", \"hotel\", \"food\"), generic words (\"receipt\", \"expense\", \"photo\", \"see attached\"), an empty email, or anything you infer from the receipt image.\n   If in doubt, return null. Never invent a purpose."
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "binaryImageDataKey": "attachment_0",
+              "imageDetail": "high"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        208,
+        -96
+      ],
+      "name": "Read Receipt",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "id": "601fe3f9-a649-48bb-8f67-a04b1c09d611",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"is_receipt\": { \"type\": \"boolean\" },\n    \"merchant\": { \"type\": [\"string\", \"null\"] },\n    \"receipt_number\": { \"type\": [\"string\", \"null\"] },\n    \"date\": { \"type\": [\"string\", \"null\"], \"description\": \"YYYY-MM-DD\" },\n    \"total\": { \"type\": [\"number\", \"null\"] },\n    \"currency\": { \"type\": [\"string\", \"null\"] },\n    \"category\": { \"type\": [\"string\", \"null\"], \"enum\": [\"Travel\", \"Food\", \"Office\", \"Software\", \"Entertainment\", \"Other\", null] },\n    \"business_purpose\": { \"type\": [\"string\", \"null\"] },\n    \"reason\": { \"type\": \"string\" }\n  },\n  \"required\": [\"is_receipt\", \"merchant\", \"receipt_number\", \"date\", \"total\", \"currency\", \"category\", \"business_purpose\", \"reason\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        96
+      ],
+      "name": "Receipt Parser",
+      "id": "d49c7a1d-fd19-4268-b59e-4484d80984c4"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-5",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        176,
+        96
+      ],
+      "id": "20a34406-e671-48d3-a33e-e34c1a45db8e",
+      "name": "Anthropic Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\">\n  <tr><td align=\"center\">\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:560px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\">\n\n      <!-- Header -->\n      <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\">\n        <span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span>\n        <span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;vertical-align:middle;\">samkoBuilds</span>\n        <span style=\"font-size:11px;color:#8C8C96;padding-left:6px;vertical-align:middle;font-family:'JetBrains Mono',Consolas,monospace;\">EXPENSE ASSISTANT</span>\n      </td></tr>\n\n      <!-- Body -->\n      <tr><td style=\"padding:28px;\">\n        <span style=\"display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#F2B705;border:1px solid #F2B705;border-radius:4px;padding:3px 8px;\">ACTION NEEDED</span>\n\n        <h1 style=\"margin:16px 0 8px;font-size:22px;font-weight:700;color:#F2EFE9;\">We couldn't read your receipt</h1>\n\n        <p style=\"margin:0 0 16px;font-size:15px;font-weight:300;line-height:1.6;color:#F2EFE9;\">\n          Hi {{ $('Gmail Trigger').item.json.from.value[0].name || 'there' }}, thanks for sending your expense. Unfortunately the image couldn't be processed as a receipt.\n        </p>\n\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border-left:3px solid #FF6B35;border-radius:6px;margin:0 0 20px;\">\n          <tr><td style=\"padding:12px 16px;\">\n            <div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;color:#8C8C96;margin-bottom:4px;\">REASON</div>\n            <div style=\"font-size:14px;color:#F2EFE9;line-height:1.5;\">{{ $json.output?.reason ?? 'The image could not be read.' }}</div>\n          </td></tr>\n        </table>\n\n        <p style=\"margin:0 0 8px;font-size:15px;font-weight:600;color:#F2EFE9;\">To fix it, reply to this email with a new photo where:</p>\n        <ul style=\"margin:0 0 20px;padding-left:20px;font-size:15px;font-weight:300;line-height:1.7;color:#F2EFE9;\">\n          <li>the <b style=\"font-weight:600;\">whole receipt</b> is in the frame</li>\n          <li>the <b style=\"font-weight:600;\">merchant, date and total</b> are readable</li>\n          <li>the lighting is good, with no glare or shadows</li>\n        </ul>\n      </td></tr>\n\n      <!-- Footer -->\n      <tr><td style=\"padding:16px 28px;border-top:1px solid #2E2E35;font-size:12px;color:#8C8C96;line-height:1.5;\">\n        Sent automatically by the samkoBuilds Expense Receipt Assistant.<br>\n        <a href=\"https://samkobuilds.com\" style=\"color:#4DA6FF;text-decoration:none;\">samkobuilds.com</a>\n      </td></tr>\n\n    </table>\n  </td></tr>\n</table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        80
+      ],
+      "id": "0fdf5156-9548-4cda-8d61-c7220ce64a4f",
+      "name": "Ask for a new photo",
+      "webhookId": "f9c1593f-10d8-4b82-aa77-aa619b8b45eb"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "efc9ec14-ab57-4843-8220-ce52cb89d6da",
+              "name": "employee_email",
+              "value": "={{ $('Gmail Trigger').item.json.from.value[0].address.toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "a6beb757-fcd3-48d6-a839-d949a4db2763",
+              "name": "merchant",
+              "value": "={{ $json.output.merchant }}",
+              "type": "string"
+            },
+            {
+              "id": "1fccba0d-54dd-42f9-a637-47ad621ecaf1",
+              "name": "receipt_number",
+              "value": "={{ $json.output.receipt_number }}",
+              "type": "string"
+            },
+            {
+              "id": "538a228f-7595-47b4-87f6-b56a00f14804",
+              "name": "receipt_date",
+              "value": "={{ $json.output.date }}",
+              "type": "string"
+            },
+            {
+              "id": "ea1fac48-ea21-48bd-bcd1-b41ce59cdf13",
+              "name": "total",
+              "value": "={{ $json.output.total }}",
+              "type": "number"
+            },
+            {
+              "id": "c2859437-fde9-4a5e-a61a-b9a25bc4c553",
+              "name": "currency",
+              "value": "={{ ($json.output.currency || 'EUR').toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "5e0e4788-5419-4239-b95f-a468714f9273",
+              "name": "total_eur",
+              "value": "={{ ($json.output.currency || '').toUpperCase() === 'BGN' ? Math.round($json.output.total / 1.95583 * 100) / 100 : $json.output.total }}",
+              "type": "number"
+            },
+            {
+              "id": "374e483c-20df-4da7-a582-679b33985b14",
+              "name": "category",
+              "value": "={{ $json.output.category }}",
+              "type": "string"
+            },
+            {
+              "id": "773f4139-8b00-45bb-838f-5eb5c37dced0",
+              "name": "dedup_key",
+              "value": "={{ [$json.output.date, $json.output.total, $json.output.receipt_number || ($json.output.merchant || '').toLowerCase().replace(/[^\\p{L}\\p{N}]/gu, '')].join('|') }}",
+              "type": "string"
+            },
+            {
+              "id": "97f6bbd8-f67f-4d29-9b7b-8bd350c50bed",
+              "name": "business_purpose",
+              "value": "={{ $('Read Receipt').item.json.output.business_purpose }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        928,
+        -128
+      ],
+      "id": "80e7ef80-2496-4d22-93c8-6377f79b776d",
+      "name": "Normalize"
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Df2zyf90qr8zIrED",
+          "mode": "list",
+          "cachedResultName": "expenses",
+          "cachedResultUrl": "/projects/b7ucRmB8oNiMECkd/datatables/Df2zyf90qr8zIrED"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dedup_key",
+              "keyValue": "={{ $json.dedup_key }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        -128
+      ],
+      "id": "385f38a7-fd26-4260-b175-7d025e16e7d3",
+      "name": "Skip Duplicates"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "wk2OyiQupBmAMXZm",
+          "mode": "list",
+          "cachedResultName": "expense policy",
+          "cachedResultUrl": "/projects/b7ucRmB8oNiMECkd/datatables/wk2OyiQupBmAMXZm"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "category",
+              "keyValue": "={{ $('Normalize').item.json.category }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        -128
+      ],
+      "id": "0289fb25-d74c-4675-beb4-c9386fe4b76c",
+      "name": "Get policy",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "77209049-a9fa-48c2-9627-79a20dea08fd",
+              "name": "employee_email",
+              "value": "={{ $('Normalize').item.json.employee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "07627b18-7aa0-4470-ab8f-f97017c4cc12",
+              "name": "merchant",
+              "value": "={{ $('Normalize').item.json.merchant }}",
+              "type": "string"
+            },
+            {
+              "id": "0d1d8f9e-8d2d-4c3a-aeef-77e847f83d04",
+              "name": "receipt_number",
+              "value": "={{ $('Normalize').item.json.receipt_number }}",
+              "type": "string"
+            },
+            {
+              "id": "176737b4-8e8c-442b-aa26-1c4a352d423f",
+              "name": "receipt_date",
+              "value": "={{ $('Normalize').item.json.receipt_date }}",
+              "type": "string"
+            },
+            {
+              "id": "979aa9f2-7cdf-42b8-8ffe-98bf671a8a64",
+              "name": "total",
+              "value": "={{ $('Normalize').item.json.total }}",
+              "type": "number"
+            },
+            {
+              "id": "f8a7cd45-4178-4126-901e-863b92a23487",
+              "name": "currency",
+              "value": "={{ $('Normalize').item.json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "3e59e2e4-a150-4b1d-9253-a8ea60d9545c",
+              "name": "total_eur",
+              "value": "={{ $('Normalize').item.json.total_eur }}",
+              "type": "number"
+            },
+            {
+              "id": "2b6cd7b9-6575-471e-912c-2de8593a2ef9",
+              "name": "category",
+              "value": "={{ $('Normalize').item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "a3598f40-9ea6-4177-a034-758b9ee24b1e",
+              "name": "dedup_key",
+              "value": "={{ $('Normalize').item.json.dedup_key }}",
+              "type": "string"
+            },
+            {
+              "id": "4a559c13-c461-4d9f-bc1d-a3c1653c05de",
+              "name": "employee_name",
+              "value": "={{ $('Get employee').item.json.name || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "487170b2-0310-4bdc-b8fc-10f7b83836f8",
+              "name": "department",
+              "value": "={{ $('Get employee').item.json.department || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "471b20d3-cfa0-4d83-99dd-dd6e664686da",
+              "name": "manager_email",
+              "value": "={{ $('Get employee').item.json.manager_email || 'your-email@example.com' }}",
+              "type": "string"
+            },
+            {
+              "id": "ae74eddd-3858-46a7-8f16-06287a50ec44",
+              "name": "limit_eur",
+              "value": "={{ $json.auto_approve_up_to_eur ?? 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "fda97a08-c6c8-4846-bf15-ddc847e48628",
+              "name": "decision",
+              "value": "={{ $json.allowed === false ? 'reject' : ($json.category === 'Food' && !$('Normalize').item.json.business_purpose ? 'ask_manager' : ($json.allowed === true && $('Normalize').item.json.total_eur <= $json.auto_approve_up_to_eur ? 'approve' : 'ask_manager')) }}",
+              "type": "string"
+            },
+            {
+              "id": "c51e1429-0396-47be-864a-93389cf56674",
+              "name": "decision_reason",
+              "value": "={{ $json.allowed === false ? $json.category + ' expenses are not reimbursed under the company policy.' : ($json.category === 'Food' && !$('Normalize').item.json.business_purpose ? 'No business purpose was given for this meal, so your manager will review it.' : ($json.allowed === true && $('Normalize').item.json.total_eur <= $json.auto_approve_up_to_eur ? 'Within the ' + $json.auto_approve_up_to_eur + ' EUR auto-approval limit for ' + $json.category + '.' : 'Above the auto-approval limit, so your manager will review it.')) }}",
+              "type": "string"
+            },
+            {
+              "id": "d2b86e7f-fbfc-40bb-8b43-10662e57513b",
+              "name": "business_purpose",
+              "value": "={{ $('Normalize').item.json.business_purpose }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1856,
+        -128
+      ],
+      "id": "442d57d6-de46-4f0e-b3ae-4889ad92be71",
+      "name": "Combine & Decide",
+      "notes": "Receipt:  employee_email → dedup_key  (from Normalize)\nPerson:   employee_name, department, manager_email  (from Get employee)\nDecision: limit_eur, decision, decision_reason  (from Get policy)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tvTZAiPwNOK43h3K",
+          "mode": "list",
+          "cachedResultName": "employees",
+          "cachedResultUrl": "/projects/b7ucRmB8oNiMECkd/datatables/tvTZAiPwNOK43h3K"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.employee_email }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        -128
+      ],
+      "id": "f7261092-3605-4a20-b1f1-a0e4584c4424",
+      "name": "Get employee",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "## Combine & Decide\nGathers everything into one item and decides what happens to the receipt.\n\n**Receipt** (from Normalize)\nmerchant, date, total, currency, total_eur, category, dedup_key\n\n**Person** (from Get employee)\nemployee_name, department, manager_email\nUnknown sender → \"Unknown\" + default manager\n\n**Decision** (from Get policy)\n- Category not allowed → **reject**\n- Allowed and total_eur ≤ limit → **approve**\n- Over limit or unknown category → **ask_manager**\n",
+        "height": 304,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        64
+      ],
+      "id": "928050fe-f158-454a-bc49-de0363d64d4e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0dedb6fd-071c-4e04-98dc-d064ff9a377a",
+              "leftValue": "={{ $json.output.is_receipt }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "dabae89a-b49c-4ae0-b140-661381f5e424",
+              "leftValue": "={{ $json.output.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        688,
+        -112
+      ],
+      "id": "5d04fc8f-75aa-4433-b1f1-49a7d0b47aa9",
+      "name": "Valid receipt?"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c75f882e-d31e-47aa-a9f8-77cbb17eb633"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "bebe8bb0-5f95-47c0-8cc5-20c3cb0f51de",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "=ask_manager",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask_manager"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "af363133-5150-4fac-9868-3f317deb84b0",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reject"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "unexpected"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        2096,
+        -160
+      ],
+      "id": "7cdc28d4-38f4-4b81-950b-4b8d5e0e5a01",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $json.manager_email }}",
+        "subject": "=Approval needed: {{ $json.employee_name }} – {{ $json.total_eur }} EUR at {{ $json.merchant }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;border-radius:12px;font-family:Montserrat,Arial,Helvetica,sans-serif;\">\n<tr><td style=\"padding:20px 24px;border-bottom:1px solid #2E2E35;\">\n<span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span>\n<span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span>\n<span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">EXPENSE ASSISTANT</span>\n</td></tr>\n<tr><td style=\"padding:24px;\">\n<span style=\"display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:#F2B705;border:1px solid #F2B705;border-radius:4px;padding:3px 8px;\">APPROVAL NEEDED</span>\n<h1 style=\"margin:14px 0 6px;font-size:20px;font-weight:700;color:#F2EFE9;\">{{ $json.employee_name }} submitted an expense</h1>\n<p style=\"margin:0 0 18px;font-size:14px;font-weight:300;line-height:1.6;color:#8C8C96;\">{{ $json.department }} · {{ $json.employee_email }}</p>\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#17171B;border:1px solid #2E2E35;border-radius:8px;font-size:14px;color:#F2EFE9;\">\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;\">MERCHANT</td><td style=\"padding:10px 16px;\">{{ $json.merchant }}</td></tr>\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">DATE</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $json.receipt_date }}</td></tr>\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">CATEGORY</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $json.category }}</td></tr>\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">PURPOSE</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $json.business_purpose || 'Not provided' }}</td></tr>\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">AMOUNT</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;font-weight:700;\">{{ $json.total_eur }} EUR{{ $json.currency !== 'EUR' ? ' (' + $json.total + ' ' + $json.currency + ')' : '' }}</td></tr>\n<tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">AUTO LIMIT</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $json.limit_eur }} EUR</td></tr>\n</table>\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border-left:3px solid #FF6B35;border-radius:6px;margin:16px 0 0;\">\n<tr><td style=\"padding:12px 16px;font-size:14px;color:#F2EFE9;line-height:1.5;\">{{ !['approve','ask_manager','reject'].includes($json.decision) ? 'The system could not decide on this expense automatically, so <b style=\"color:#FF6B35;\">please review it manually</b>.' : ($json.total_eur > $json.limit_eur ? 'This expense is <b style=\"color:#FF6B35;\">' + ($json.total_eur - $json.limit_eur).toFixed(2) + ' EUR over</b> the auto-approval limit.' : 'This meal has <b style=\"color:#FF6B35;\">no business purpose</b> stated by the employee.') }} Use the button below to approve, adjust the amount, or reject.</td></tr>\n</table>\n</td></tr>\n</table>",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Reject"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Approved amount (EUR)",
+              "fieldType": "number",
+              "placeholder": "=Leave empty = full amount ({{ $json.total_eur }} EUR)"
+            },
+            {
+              "fieldLabel": "Comment",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "responseFormTitle": "Expense approval",
+          "responseFormDescription": "={{ $json.employee_name }} – {{ $json.merchant }}, {{ $json.total_eur }} EUR",
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 7,
+              "resumeUnit": "days"
+            }
+          },
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        -304
+      ],
+      "id": "d922f446-8068-4c2a-a44c-14c4a07dfff5",
+      "name": "Ask manager",
+      "webhookId": "af627665-220d-4346-af28-f3c392247571"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff6e6a22-4915-407c-bdf3-9bc6ce538a8d",
+              "name": "decision",
+              "value": "approved",
+              "type": "string"
+            },
+            {
+              "id": "d65f7075-4987-4ec8-9c47-70ce98a2e735",
+              "name": "approved_amount_eur",
+              "value": "={{ $json.total_eur }}",
+              "type": "number"
+            },
+            {
+              "id": "6845573f-e0b2-433b-aee8-482d44fd0343",
+              "name": "manager_comment",
+              "value": "Auto-approved within policy limit",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2480,
+        -528
+      ],
+      "id": "a45dfd37-35d7-4463-89f1-b88006d10a26",
+      "name": "Outcome: approved"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe9fbaed-d374-4d13-838f-1946f37c4c59",
+              "name": "decision",
+              "value": "rejected",
+              "type": "string"
+            },
+            {
+              "id": "66e36e45-b90a-47b4-9dd8-b2760b309761",
+              "name": "approved_amount_eur",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "b29c2639-d44f-4f8a-b65f-f785c73afb99",
+              "name": "manager_comment",
+              "value": "Auto-rejected: category not reimbursable",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2896,
+        -112
+      ],
+      "id": "fe66a14c-0c09-41af-93c7-a7ffee93d575",
+      "name": "Outcome: Rejected"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ed2b345-10c5-4132-a5a1-df52a7c1dee0",
+              "name": "decision",
+              "value": "={{ $json.data.Decision === 'Approve' ? 'approved' : 'rejected' }}",
+              "type": "string"
+            },
+            {
+              "id": "2db4ca74-2094-4b53-9100-47b22c232a3f",
+              "name": "approved_amount_eur",
+              "value": "={{ $json.data.Decision === 'Approve' ? Math.min(Number($json.data['Approved amount (EUR)']) || $('Combine & Decide').item.json.total_eur, $('Combine & Decide').item.json.total_eur) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "363bc8c7-5fb2-4e41-8b28-3eefebeddd8f",
+              "name": "manager_comment",
+              "value": "={{ $json.data.Comment || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2688,
+        -304
+      ],
+      "id": "c41f34a7-60b1-4320-9e57-68b57c608cb5",
+      "name": "Outcome: Maneger"
+    },
+    {
+      "parameters": {
+        "content": "## Outcome: manager\nTurns the manager's form answers into the 3 outcome fields.\n\n**Reading the form**\n`$json.data['Approved amount (EUR)']` uses brackets because the label has spaces. Don't rename the form labels.\n\n**Safety rules**\n- Approve → amount = smaller of (manager's amount, receipt total). Stops typos like 3860 instead of 386.\n- Reject → amount = 0, whatever was typed.\n- Comment is optional → empty if left blank.",
+        "height": 304,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        64
+      ],
+      "id": "abaf00de-66b1-4eb3-bce4-4f8df71daecc",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "Df2zyf90qr8zIrED",
+          "mode": "list",
+          "cachedResultName": "expenses",
+          "cachedResultUrl": "/projects/b7ucRmB8oNiMECkd/datatables/Df2zyf90qr8zIrED"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dedup_key": "={{ $('Combine & Decide').item.json.dedup_key }}",
+            "receipt_number": "={{ $('Combine & Decide').item.json.receipt_number }}",
+            "employee_email": "={{ $('Combine & Decide').item.json.employee_email }}",
+            "employee_name": "={{ $('Combine & Decide').item.json.employee_name }}",
+            "department": "={{ $('Combine & Decide').item.json.department }}",
+            "merchant": "={{ $('Combine & Decide').item.json.merchant }}",
+            "receipt_date": "={{ $('Combine & Decide').item.json.receipt_date }}T00:00:00.000Z",
+            "total": "={{ $('Combine & Decide').item.json.total }}",
+            "currency": "={{ $('Combine & Decide').item.json.currency }}",
+            "total_eur": "={{ $('Combine & Decide').item.json.total_eur }}",
+            "category": "={{ $('Combine & Decide').item.json.category }}",
+            "decision": "={{ $json.decision }}",
+            "manager_comment": "={{ $json.manager_comment }}",
+            "approved_amount_eur": "={{ $json.approved_amount_eur }}",
+            "business_purpose": "={{ $('Combine & Decide').item.json.business_purpose }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "dedup_key",
+              "displayName": "dedup_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "receipt_number",
+              "displayName": "receipt_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "employee_email",
+              "displayName": "employee_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "employee_name",
+              "displayName": "employee_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "merchant",
+              "displayName": "merchant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "receipt_date",
+              "displayName": "receipt_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "total_eur",
+              "displayName": "total_eur",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "manager_comment",
+              "displayName": "manager_comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "approved_amount_eur",
+              "displayName": "approved_amount_eur",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "business_purpose",
+              "displayName": "business_purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3024,
+        -528
+      ],
+      "id": "37fac2c0-d639-418d-a87b-f4d551c10114",
+      "name": "Save Expense"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "=<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0D0D0F;padding:32px 16px;font-family:Montserrat,Arial,Helvetica,sans-serif;\"> <tr><td align=\"center\"> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:560px;background:#17171B;border:1px solid #2E2E35;border-radius:12px;\"> <tr><td style=\"padding:24px 28px;border-bottom:1px solid #2E2E35;\"> <span style=\"display:inline-block;background:#232328;border-radius:8px;padding:6px 10px;font-size:18px;font-weight:700;color:#F2EFE9;\">s<span style=\"color:#FF6B35;\">B</span></span> <span style=\"font-size:16px;font-weight:600;color:#F2EFE9;padding-left:10px;\">samkoBuilds</span> <span style=\"font-size:11px;color:#8C8C96;padding-left:6px;font-family:'JetBrains Mono',Consolas,monospace;\">EXPENSE ASSISTANT</span> </td></tr> <tr><td style=\"padding:28px;\"> <span style=\"display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;letter-spacing:1px;color:{{ $json.decision === 'approved' ? '#3FB878' : '#E5484D' }};border:1px solid {{ $json.decision === 'approved' ? '#3FB878' : '#E5484D' }};border-radius:4px;padding:3px 8px;\">{{ $json.decision === 'approved' ? ($json.approved_amount_eur < $('Combine & Decide').item.json.total_eur ? 'PARTIALLY APPROVED' : 'APPROVED') : 'REJECTED' }}</span> <h1 style=\"margin:16px 0 8px;font-size:22px;font-weight:700;color:#F2EFE9;\">Your expense was {{ $json.decision }}</h1> <p style=\"margin:0 0 20px;font-size:15px;font-weight:300;line-height:1.6;color:#F2EFE9;\">Hi {{ $('Combine & Decide').item.json.employee_name }}, here is the result for the receipt you submitted.</p> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border:1px solid #2E2E35;border-radius:8px;font-size:14px;color:#F2EFE9;\"> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;\">MERCHANT</td><td style=\"padding:10px 16px;\">{{ $('Combine & Decide').item.json.merchant }}</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">DATE</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $('Combine & Decide').item.json.receipt_date }}</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">CATEGORY</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $('Combine & Decide').item.json.category }}</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">RECEIPT TOTAL</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;\">{{ $('Combine & Decide').item.json.total_eur }} EUR</td></tr> <tr><td style=\"padding:10px 16px;color:#8C8C96;font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;border-top:1px solid #2E2E35;\">REIMBURSED</td><td style=\"padding:10px 16px;border-top:1px solid #2E2E35;font-weight:700;color:{{ $json.decision === 'approved' ? '#3FB878' : '#E5484D' }};\">{{ $json.approved_amount_eur }} EUR</td></tr> </table> <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#232328;border-left:3px solid #FF6B35;border-radius:6px;margin:16px 0 0;\"> <tr><td style=\"padding:12px 16px;\"> <div style=\"font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;color:#8C8C96;margin-bottom:4px;\">NOTE</div> <div style=\"font-size:14px;color:#F2EFE9;line-height:1.5;\">{{ $json.manager_comment || $('Combine & Decide').item.json.decision_reason }}</div> </td></tr> </table> </td></tr> <tr><td style=\"padding:16px 28px;border-top:1px solid #2E2E35;font-size:12px;color:#8C8C96;line-height:1.5;\">Sent automatically by the samkoBuilds Expense Receipt Assistant.<br><a href=\"https://samkobuilds.com\" style=\"color:#4DA6FF;text-decoration:none;\">samkobuilds.com</a></td></tr> </table> </td></tr> </table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3248,
+        -528
+      ],
+      "id": "97567347-7fd5-4b1a-8964-8020e6621634",
+      "name": "Reply to a message",
+      "webhookId": "9c0dfbb3-93b3-45a2-a31d-3afb4648c500"
+    },
+    {
+      "parameters": {
+        "content": " ## Food rule: business purpose\nPolicy: Food is only for **meals on business trips or with clients**. A receipt shows *what* was bought, not *why*, so the employee must say it in the email.\n\n**How it works**\n- Read Receipt pulls `business_purpose` from the email subject/body only\n- Valid = says WHY or WITH WHOM (\"lunch with client Ivanov\")\n- Invalid → null (\"coffee\", \"receipt\", empty email)\n- AI must never guess the purpose from the image\n\n**Decision**\nFood + no purpose → **ask_manager**, even under the 40 EUR limit\nManager sees \"Purpose: Not provided\" in the approval email",
+        "height": 352,
+        "width": 448
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        64
+      ],
+      "id": "d1efb9d5-80f4-4ae1-b0e3-26f405bc9071",
+      "name": "Sticky Note3"
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receipt Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Read Receipt",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Read Receipt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Receipt": {
+      "main": [
+        [
+          {
+            "node": "Valid receipt?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for a new photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Skip Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Get employee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get policy": {
+      "main": [
+        [
+          {
+            "node": "Combine & Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get employee": {
+      "main": [
+        [
+          {
+            "node": "Get policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid receipt?": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for a new photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Combine & Decide": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Outcome: approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Outcome: Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask manager": {
+      "main": [
+        [
+          {
+            "node": "Outcome: Maneger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outcome: Rejected": {
+      "main": [
+        [
+          {
+            "node": "Save Expense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outcome: Maneger": {
+      "main": [
+        [
+          {
+            "node": "Save Expense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outcome: approved": {
+      "main": [
+        [
+          {
+            "node": "Save Expense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Expense": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
